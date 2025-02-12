@@ -90,7 +90,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
 	accumulatedCraftOutput.item.quantity = 0
 	local craftedItemID = accumulatedCraftOutput.item.itemID
-	for _, craftOutput in pairs(collectedCraftOutputData) do'
+	for _, craftOutput in pairs(collectedCraftOutputData) do
 		if craftOutput.item.itemID ~= craftedItemID then
 			print("CraftLogger: Currently Does Not Support Multiple Items Output.")
 			return

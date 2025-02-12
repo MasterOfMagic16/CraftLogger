@@ -92,7 +92,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	local craftedItemID = accumulatedCraftOutput.item.itemID
 	for _, craftOutput in pairs(collectedCraftOutputData) do'
 		if craftOutput.item.itemID ~= craftedItemID then
-			print("CraftLogger: Currently Does Not Support Multiple Items Output")
+			print("CraftLogger: Currently Does Not Support Multiple Items Output.")
 			return
 		end	
 		accumulatedCraftOutput.item.quantity = accumulatedCraftOutput.item.quantity + craftOutput.item.quantity

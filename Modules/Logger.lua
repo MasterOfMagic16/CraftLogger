@@ -10,6 +10,7 @@ CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true}
 
 function CraftLogger.Logger:SetRecipeData(recipeData)
 	CraftLogger.Logger.currentRecipeData = recipeData
+	CraftLogger.Logger.recipeDataFresh = true
 end
 
 function CraftLogger.Logger:SetCraftableAmount(craftAbleAmount)
@@ -22,7 +23,6 @@ local isAccumulatingCraftOutputData = true
 function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultData)
 	local recipeData = CraftLogger.Logger.currentRecipeData
 
-
 	--Filter Conditions
 	if not CraftLoggerDBSettings.enabled then
 		print("CraftLogger: CraftLogger Is Currently Disabled.")
@@ -32,6 +32,11 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 	local language = GetLocale()
 	if language ~= "enUS" and language ~= "enGB" then
 		print("CraftLogger: Currently Does Not Support Other Languages.")
+		return
+	end
+	
+	if not CraftLogger.Logger.recipeDataFresh then
+		print("CraftLogger: recipeData Generation Failed.")
 		return
 	end
 	

@@ -158,3 +158,91 @@ function CraftLogger.UTIL:ConvertDateToTime(date1)
 	
 	return time(dateTbl)
 end
+
+--Debug
+function CraftLogger.UTIL:PrintCraftTable(craftingReagentInfoTbl)
+	print("CraftLogger: Begin Table.")
+	if #craftingReagentInfoTbl == 0 then
+		print("CraftLogger: Table Empty.")
+		return
+	end
+	for _, reagent in pairs(craftingReagentInfoTbl) do
+		print(C_Item.GetItemNameByID(reagent.itemID))
+		print(reagent.quantity)
+	end
+	print("CraftLogger: End Table.")
+end
+
+function CraftLogger.UTIL:PrintSchematicForm(recipeData)
+	print("CraftLogger: Begin Schematic.")
+	local schematicForm = CraftLogger.UTIL:GetSchematicFormByVisibility()
+	if not schematicForm then
+		print("CraftLogger: No Schematic.")
+		return
+	end
+	local schematicInfo = C_TradeSkillUI.GetRecipeSchematic(recipeData.recipeID, recipeData.isRecraft)
+
+	local reagentSlots = schematicForm.reagentSlots
+	local currentTransaction = schematicForm:GetTransaction()
+
+	local currentOptionalReagent = 1
+	local currentFinishingReagent = 1
+
+	for slotIndex, currentSlot in pairs(schematicInfo.reagentSlotSchematics) do
+		local reagentType = currentSlot.reagentType
+		if reagentType == 1 then
+			local slotAllocations = currentTransaction:GetAllocations(slotIndex)
+
+			for i, reagent in pairs(currentSlot.reagents) do
+				local reagentAllocation = (slotAllocations and slotAllocations:FindAllocationByReagent(reagent)) or nil
+				local allocations = 0
+				if reagentAllocation ~= nil then
+					allocations = reagentAllocation:GetQuantity()
+					print(C_Item.GetItemNameByID(reagent.itemID))
+					--print("reagent #" .. i .. " allocation:")
+					--print(reagentAllocation)
+					print(allocations)
+				end
+			end
+		elseif reagentType == 0 then
+			if currentSlot.required then
+				local requiredSelectableReagentSlot = reagentSlots[1][1]
+				local button = requiredSelectableReagentSlot.Button
+				local allocatedItemID = button:GetItemID()
+				if allocatedItemID then
+					print("Set Required Selectable")
+					print(requiredSelectableReagentSlot.maxQuantity)
+				end
+			elseif reagentSlots[reagentType] ~= nil then
+				local optionalSlots = reagentSlots[reagentType][currentOptionalReagent]
+				if not optionalSlots then
+					print("End Optional")
+					error()
+				end
+				local button = optionalSlots.Button
+				local allocatedItemID = button:GetItemID()
+				if allocatedItemID then
+					print("Set Optional Reagent")
+				end
+
+				currentOptionalReagent = currentOptionalReagent + 1
+			end
+		elseif reagentType == 2 then
+			if reagentSlots[reagentType] ~= nil then
+				local optionalSlots = reagentSlots[reagentType][currentFinishingReagent]
+				if not optionalSlots then
+					print("End Finishing")
+					error()
+				end
+				local button = optionalSlots.Button
+				local allocatedItemID = button:GetItemID()
+				if allocatedItemID then
+					print("Set Optional Reagent")
+				end
+
+				currentFinishingReagent = currentFinishingReagent + 1
+			end
+		end
+	end
+	print("CraftLogger: End Schematic.")
+end

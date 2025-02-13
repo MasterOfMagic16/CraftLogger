@@ -19,6 +19,8 @@ end
 --Mirrors CraftSim with extra handling
 function CraftLogger.INIT:InitCraftRecipeHooks()
 	local function OnCraft(onCraftTable)
+		CraftLogger.Logger.recipeDataFresh = false
+		
 		local recipeData = CraftSimAPI:GetRecipeData({
 				recipeID = onCraftTable.recipeID,
 				orderData = onCraftTable.orderData,
@@ -45,7 +47,6 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 			if recipeData.isEnchantingRecipe then 
 				recipeData.enchantTargetItemID = C_Item.GetItemID(onCraftTable.itemTargetLocation)
 			end
-
 		end
 	
 		--This goes first because of possible hardware override
@@ -60,7 +61,7 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 		elseif schematicForm then
 			SchematicHandling()
 		else
-			print("CraftLogger: No Craft Data Found.")
+			print("CraftLogger: No Reagent Data Found.")
 			error()
 		end
 		

@@ -65,11 +65,6 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 			SchematicHandling()
 		end
 		
-		if recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()) == 0 then
-			print("CraftLogger: Not Craftable Error.")
-			error()
-		end
-		
 		recipeData:SetEquippedProfessionGearSet()
 
 		recipeData.concentrating = onCraftTable.concentrating

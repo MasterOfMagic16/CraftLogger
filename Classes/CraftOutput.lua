@@ -79,9 +79,22 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	self.reagents = {}
 	for _, reagent in pairs(recipeData.reagentData.requiredReagents) do
 		for _, reagentItem in pairs(reagent.items) do
+			local itemID = reagentItem.item:GetItemID()
+			
+			if reagentItem:IsOrderReagentIn(recipeData) then
+				local orderReagent = GUTIL:Find(recipeData.orderData.reagents, function(r) return r.reagent.itemID == itemID end)
+				if not orderReagent then
+					print("CraftLogger: Error, Order Reagent Not Found.")
+					error()
+				end
+				if reagentItem.quantity ~= 0 then
+					print("CraftLogger: Error, Order Reagent Already Has Quantity.")
+					error()
+				end
+				reagentItem.quantity = orderReagent.reagent.quantity
+			end
+			
 			if reagentItem.quantity > 0 then
-				local itemID = reagentItem.item:GetItemID()
-
 				local craftingResourceReturnInfo = GUTIL:Find(
 					craftingItemResultData.resourcesReturned, 
 					function(cRRI)
@@ -102,7 +115,6 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 					quantityReturned = craftingResourceReturnInfo.quantity,
 					isOrderReagentIn = reagentItem:IsOrderReagentIn(recipeData),
 					})
-					
 			end
 		end
 	end

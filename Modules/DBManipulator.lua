@@ -1,5 +1,7 @@
 local CraftLogger = select(2, ...)
 
+local systemPrint = print
+
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.DBManipulator = GUTIL:CreateRegistreeForEvents({ "PLAYER_LOGIN" })
@@ -11,31 +13,31 @@ end
 
 --Globals
 function CLRestoreSession()
-	print("CraftLogger: Restoring Session Backup...")
+	systemPrint("CraftLogger: Restoring Session Backup...")
 	CraftLogger.DBManipulator:RestoreDBSessionBackup()
-	print("CraftLogger: Session Backup Restored.")
+	systemPrint("CraftLogger: Session Backup Restored.")
 end
 
 function CLUndo()
-	print("CraftLogger: Restoring Backup...")
+	systemPrint("CraftLogger: Restoring Backup...")
 	CraftLogger.DBManipulator:RestoreDBBackup()
-	print("CraftLogger: Backup Restored.")
+	systemPrint("CraftLogger: Backup Restored.")
 end
 
 function CLClear()
-	print("CraftLogger: Clearing DB...")
+	systemPrint("CraftLogger: Clearing DB...")
 	
 	local function DBClear()
 		CraftLoggerDB = {}
 		assert(#CraftLoggerDB == 0, "CraftLogger: Failed DB Clear.")
-		print("CraftLogger: DB Cleared.")
+		systemPrint("CraftLogger: DB Cleared.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBClear)
 end
 
 function CLClearByDate(date1, date2)
-	print("CraftLogger: Clearing DB By Date...")
+	systemPrint("CraftLogger: Clearing DB By Date...")
 	
 	local function DBClearByDate(date1, date2)
 		local time1 = CraftLogger.UTIL:ConvertDateToTime(date1)
@@ -69,63 +71,63 @@ function CLClearByDate(date1, date2)
 			end
 		end
 	
-		print("CraftLogger: " .. number .. " entries removed.")
+		systemPrint("CraftLogger: " .. number .. " entries removed.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBClearByDate, date1, date2)
 end
 
 function CLRemoveLast()
-	print("CraftLogger: Removing DB Last Entry...")
+	systemPrint("CraftLogger: Removing DB Last Entry...")
 	
 	local function DBRemoveLastEntry()
 		local sizeBefore = #CraftLoggerDB
 		CraftLoggerDB[#CraftLoggerDB] = nil
 		local sizeAfter = #CraftLoggerDB
 		assert(sizeBefore - sizeAfter == 1, "CraftLogger: Failed DB Remove Last Entry.")
-		print("CraftLogger: Removed DB Last Entry.")
+		systemPrint("CraftLogger: Removed DB Last Entry.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBRemoveLastEntry)
 end
 
 function CLClean()
-	print("CraftLogger: Cleaning DB...")
+	systemPrint("CraftLogger: Cleaning DB...")
 	
 	local function DBClean()
 		local craftOutputTable = CraftLogger.DBManipulator:GetDBCraftOutputTable()
 		craftOutputTable:Clean()
 		CraftLoggerDB = craftOutputTable.craftOutputs
-		print("CraftLogger: Cleaned DB.")
+		systemPrint("CraftLogger: Cleaned DB.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBClean)
 end
 
 function CLDisable()
-	print("CraftLogger: Disabling DB...")
+	systemPrint("CraftLogger: Disabling DB...")
 	
 	local function DBDisable()
 		CraftLoggerDBSettings.enabled = false
-		print("CraftLogger: Disabled DB.")
+		systemPrint("CraftLogger: Disabled DB.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBDisable)
 end
 
 function CLEnable()
-	print("CraftLogger: Enabling DB...")
+	systemPrint("CraftLogger: Enabling DB...")
 	
 	local function DBEnable()
 		CraftLoggerDBSettings.enabled = true
-		print("CraftLogger: Enabled DB.")
+		systemPrint("CraftLogger: Enabled DB.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBEnable)
 end
 
 function CLRemoveRows(firstrow, rowtable)
-	print("CraftLogger: Removing Rows...")
+	systemPrint("CraftLogger: Removing Rows...")
 	
 	local function DBRemoveRows(firstrow, rowtable)
 		assert(type(rowtable) == "table", "CraftLogger: Error, rowtable Is Not Table.")
@@ -142,14 +144,14 @@ function CLRemoveRows(firstrow, rowtable)
 		local sizeAfter = #CraftLoggerDB
 		
 		assert(sizeBefore - sizeAfter == #rowtable, "CraftLogger: Failed Remove Rows.")
-		print("CraftLogger: Removed Rows. Row Indices Have Changed. Please Regenerate Spreadsheet Before Using Again.")
+		systemPrint("CraftLogger: Removed Rows. Row Indices Have Changed. Please Regenerate Spreadsheet Before Using Again.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBRemoveRows, firstrow, rowtable)
 end
 
 function CLFilter(valremovefunc, field1, field2)
-	print("CraftLogger: Filtering DB...")
+	systemPrint("CraftLogger: Filtering DB...")
 	
 	local function DBFilter(valremovefunc, field1, field2)
 	
@@ -188,7 +190,7 @@ function CLFilter(valremovefunc, field1, field2)
 		craftOutputTable:Clean()
 		CraftLoggerDB = craftOutputTable.craftOutputs
 		
-		print("CraftLogger: Filtered " .. assert(sizeBefore - sizeAfter, "CraftLogger: Failed Filter DB.") .. " Rows From DB.")
+		systemPrint("CraftLogger: Filtered " .. assert(sizeBefore - sizeAfter, "CraftLogger: Failed Filter DB.") .. " Rows From DB.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBFilter, valremovefunc, field1, field2)
@@ -199,7 +201,7 @@ function CraftLogger.DBManipulator:Protect(func, ...)
 	local retOK1, err1 = pcall(CraftLogger.DBManipulator.SetDBBackup)
 	if not retOK1 then
 		err1 = err1 or "CraftLogger: Unknown Error Occurred."
-		print(err1 .. " Generate Backup Failed, But DB Safe.")
+		systemPrint(err1 .. " Generate Backup Failed, But DB Safe.")
 		return
 	end
 	
@@ -208,22 +210,22 @@ function CraftLogger.DBManipulator:Protect(func, ...)
 	
 	if not retOK2 then
 		err2 = err2 or "CraftLogger: Unknown Error Occurred."
-		print(err2 .. " Restoring DB...")
+		systemPrint(err2 .. " Restoring DB...")
 		
 		local retOK3, err3 = pcall(CraftLogger.DBManipulator.RestoreDBBackup)
 		if not retOK3 then
 			err3 = err3 or "CraftLogger: Unknown Error Occurred."
-			print(err3 .. " Restoration Failed, Restoring Session Start DB...")
+			systemPrint(err3 .. " Restoration Failed, Restoring Session Start DB...")
 			
 			local retOK4, err4 = pcall(CraftLogger.DBManipulator.RestoreDBSessionBackup)
 			if not retOK4 then
 				err4 = err4 or "CraftLogger: Unknown Error Occurred."
-				print(err4 .. " Restoration Failed. DB Integrity Unknown.")
+				systemPrint(err4 .. " Restoration Failed. DB Integrity Unknown.")
 			else
-				print("CraftLogger: DB Session Start Successfully Restored.")
+				systemPrint("CraftLogger: DB Session Start Successfully Restored.")
 			end
 		else
-			print("CraftLogger: DB Restored.")
+			systemPrint("CraftLogger: DB Restored.")
 		end
 	end
 end

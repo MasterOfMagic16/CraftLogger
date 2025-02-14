@@ -1,5 +1,7 @@
 local CraftLogger = select(2, ...)
 
+local systemPrint = print
+
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" })
@@ -10,10 +12,10 @@ CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true, debugging = fa
 
 function CraftLogger.INIT:PLAYER_LOGIN()
 	if C_AddOns.IsAddOnLoaded("CraftSim") then
-		print("CraftLogger: Loaded.")
+		systemPrint("CraftLogger: Loaded.")
 		CraftLogger.INIT:InitCraftRecipeHooks()
 	else
-		print("CraftLogger: CraftSim Addon Is Not Loaded. CraftLogger Is Disabled.")
+		systemPrint("CraftLogger: CraftSim Addon Is Not Loaded. CraftLogger Is Disabled.")
 		CraftLoggerDBSettings.enabled = false
 	end
 end
@@ -57,7 +59,7 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 		elseif schematicForm then
 			SchematicHandling()
 		else
-			print("CraftLogger: No Reagent Data Found.")
+			systemPrint("CraftLogger: No Reagent Data Found.")
 			error()
 		end
 
@@ -90,7 +92,7 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 		--However, I've only seen these craftable one at a time, so craftableAmount = 1
 		local craftAbleAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
 		if (onCraftTable.amount - craftAbleAmount) > 0 then
-			print("CraftLogger: Tracking Will Stop After " .. max(0, onCraftTable.amount - craftAbleAmount) .. " Crafts Due To Craft Amount Command > Craftable Amount.")
+			systemPrint("CraftLogger: Tracking Will Stop After " .. max(0, onCraftTable.amount - craftAbleAmount) .. " Crafts Due To Craft Amount Command > Craftable Amount.")
 		end
 		
 		CraftLogger.Logger:SetCraftableAmount(craftAbleAmount)

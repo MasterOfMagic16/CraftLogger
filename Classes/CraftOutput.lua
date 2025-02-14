@@ -87,7 +87,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 					print("CraftLogger: Error, Order Reagent Not Found.")
 					error()
 				end
-				if reagentItem.quantity ~= 0 then
+				if reagentItem.quantity ~= 0 and not (not reagent.hasQuality and reagentItem.quantity == orderReagent.reagent.quantity) then
 					print("CraftLogger: Error, Order Reagent Already Has Quantity.")
 					error()
 				end

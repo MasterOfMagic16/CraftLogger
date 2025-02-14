@@ -4,10 +4,6 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.Logger = GUTIL:CreateRegistreeForEvents({ "TRADE_SKILL_ITEM_CRAFTED_RESULT" })
 
---Initialize Global Tracking
-CraftLoggerDB = CraftLoggerDB or {}
-CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true}
-
 function CraftLogger.Logger:SetRecipeData(recipeData)
 	CraftLogger.Logger.currentRecipeData = recipeData
 	CraftLogger.Logger.recipeDataFresh = true

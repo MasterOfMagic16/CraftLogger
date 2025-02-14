@@ -4,7 +4,9 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" })
 
-CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true}
+--Initialize Global Tracking
+CraftLoggerDB = CraftLoggerDB or {}
+CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true, debugging = false}
 
 function CraftLogger.INIT:PLAYER_LOGIN()
 	if C_AddOns.IsAddOnLoaded("CraftSim") then

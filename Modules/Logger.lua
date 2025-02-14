@@ -79,7 +79,7 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 	table.insert(accumulatingCraftOutputData, craftOutput)
 	if isAccumulatingCraftOutputData then
         isAccumulatingCraftOutputData = false
-        C_Timer.After(0.1, function()
+        C_Timer.After(0.2, function()
             CraftLogger.Logger:AccumulateCraftOutputs()
         end)
     end

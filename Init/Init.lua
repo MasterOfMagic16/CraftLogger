@@ -52,19 +52,23 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 		--This goes first because of possible hardware override
 		if #craftingReagentInfoTbl > 0 then
 			CraftTblHandling()
-			
-			--When not craftable, reagentData wasn't generated correctly. Likely that optional reagents were used without changing required allocations.
-			--This only happens with defaultGUI, therefore:
-			if recipeData.orderData or recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()) == 0 then
-				SchematicHandling()
-			end
 		elseif schematicForm then
 			SchematicHandling()
 		else
 			print("CraftLogger: No Reagent Data Found.")
 			error()
 		end
+
+		--When not craftable, reagentData wasn't generated correctly. Likely that optional reagents were used without changing required allocations.
+		--This only happens with defaultGUI, therefore:
+		if recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()) == 0 then
+			SchematicHandling()
+		end
 		
+		if recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()) == 0 then
+			print("CraftLogger: Not Craftable Error.")
+			error()
+		end
 		
 		recipeData:SetEquippedProfessionGearSet()
 

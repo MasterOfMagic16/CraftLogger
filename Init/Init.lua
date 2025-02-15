@@ -14,10 +14,21 @@ function CraftLogger.INIT:PLAYER_LOGIN()
 	if C_AddOns.IsAddOnLoaded("CraftSim") then
 		systemPrint("CraftLogger: Loaded.")
 		CraftLogger.INIT:InitCraftRecipeHooks()
+		
+		CraftLogger.INIT:Init()
+		CraftLogger.UTIL:Init()
+		CraftLogger.CraftOutput:Init()
+		CraftLogger.Logger:Init()
+		CraftLogger.DBManipulator:Init()
 	else
 		systemPrint("CraftLogger: CraftSim Addon Is Not Loaded. CraftLogger Is Disabled.")
 		CraftLoggerDBSettings.enabled = false
 	end
+end
+
+local print
+function CraftLogger.INIT:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Init")
 end
 
 --Mirrors CraftSim with extra handling

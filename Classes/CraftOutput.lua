@@ -6,6 +6,11 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CraftOutput = CraftLogger.CraftLoggerObject:extend()
 
+local print
+function CraftLogger.CraftOutput:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.CraftOutput")
+end
+
 --For initializing CraftLoggerDB classes
 --Assume no further nested classes
 function CraftLogger.CraftOutput:new(craftOutputData)

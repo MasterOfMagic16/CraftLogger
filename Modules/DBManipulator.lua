@@ -6,6 +6,11 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.DBManipulator = GUTIL:CreateRegistreeForEvents({ "PLAYER_LOGIN" })
 
+local print
+function CraftLogger.DBManipulator:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.DBManipulator")
+end
+
 function CraftLogger.DBManipulator:PLAYER_LOGIN()
 	CraftLogger.DBManipulator.DBBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
 	CraftLogger.DBManipulator.SessionBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)

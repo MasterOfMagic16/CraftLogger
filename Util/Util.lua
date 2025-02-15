@@ -6,6 +6,11 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.UTIL = {}
 
+local print
+function CraftLogger.UTIL:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Util")
+end
+
 --Core
 function CraftLogger.UTIL:GetSchematicFormByVisibility()
     if ProfessionsFrame.CraftingPage.SchematicForm:IsVisible() then

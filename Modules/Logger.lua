@@ -6,6 +6,11 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.Logger = GUTIL:CreateRegistreeForEvents({ "TRADE_SKILL_ITEM_CRAFTED_RESULT" })
 
+local print
+function CraftLogger.Logger:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Logger")
+end
+
 function CraftLogger.Logger:SetRecipeData(recipeData)
 	CraftLogger.Logger.currentRecipeData = recipeData
 	CraftLogger.Logger.recipeDataFresh = true

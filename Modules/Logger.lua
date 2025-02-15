@@ -1,8 +1,15 @@
 local CraftLogger = select(2, ...)
 
+local systemPrint = print
+
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.Logger = GUTIL:CreateRegistreeForEvents({ "TRADE_SKILL_ITEM_CRAFTED_RESULT" })
+
+local print
+function CraftLogger.Logger:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Logger")
+end
 
 function CraftLogger.Logger:SetRecipeData(recipeData)
 	CraftLogger.Logger.currentRecipeData = recipeData
@@ -21,49 +28,49 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 
 	--Filter Conditions
 	if not CraftLoggerDBSettings.enabled then
-		print("CraftLogger: CraftLogger Is Currently Disabled.")
+		systemPrint("CraftLogger: CraftLogger Is Currently Disabled.")
 		return
 	end
 	
 	local language = GetLocale()
 	if language ~= "enUS" and language ~= "enGB" then
-		print("CraftLogger: Currently Does Not Support Other Languages.")
+		systemPrint("CraftLogger: Currently Does Not Support Other Languages.")
 		return
 	end
 	
 	if not CraftLogger.Logger.recipeDataFresh then
-		print("CraftLogger: recipeData Generation Failed.")
+		systemPrint("CraftLogger: recipeData Generation Failed.")
 		return
 	end
 	
 	if craftingItemResultData.isEnchant then
-		print("CraftLogger: Currently Does Not Support Gear Enchants.")
+		systemPrint("CraftLogger: Currently Does Not Support Gear Enchants.")
 		return
 	end
 	
 	if recipeData.isSalvageRecipe then
-		print("CraftLogger: Currently Does Not Support Salvage Recipes.")
+		systemPrint("CraftLogger: Currently Does Not Support Salvage Recipes.")
 		return
 	end
 	
 	if recipeData.isQuestRecipe then
-		print("CraftLogger: Does Not Track Quest Recipes.")
+		systemPrint("CraftLogger: Does Not Track Quest Recipes.")
 		return
 	end
 	
 	if recipeData.recipeInfo.isDummyRecipe then
-		print("CraftLogger: Does Not Track Dummy Recipes.")
+		systemPrint("CraftLogger: Does Not Track Dummy Recipes.")
 		return
 	end
 	
 	if CraftLogger.Logger.craftAbleAmountRemaining < 1 then
-		print("CraftLogger: Does Not Track CraftAmounts Beyond Initial Craftable Amount Due To ReagentData Errors.")
+		systemPrint("CraftLogger: Does Not Track CraftAmounts Beyond Initial Craftable Amount Due To ReagentData Errors.")
 		return
 	end
 
 	local possibleItems = recipeData.resultData.itemsByQuality
 	if not GUTIL:Find(possibleItems, function(i) return i:GetItemID() == craftingItemResultData.itemID end) then
-		print("CraftLogger: Failed. Item Created Is Not Possible With Current RecipeData.")
+		systemPrint("CraftLogger: Failed. Item Created Is Not Possible With Current RecipeData.")
 		return
 	end
 	--End Filter Conditions
@@ -93,7 +100,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	local craftedItemID = accumulatedCraftOutput.item.itemID
 	for _, craftOutput in pairs(collectedCraftOutputData) do
 		if craftOutput.item.itemID ~= craftedItemID then
-			print("CraftLogger: Currently Does Not Support Multiple Items Output.")
+			systemPrint("CraftLogger: Currently Does Not Support Multiple Items Output.")
 			return
 		end	
 		accumulatedCraftOutput.item.quantity = accumulatedCraftOutput.item.quantity + craftOutput.item.quantity
@@ -102,7 +109,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	--Verify Output is Clean For CraftLoggerDB
 	accumulatedCraftOutput:Clean()
 	table.insert(CraftLoggerDB, accumulatedCraftOutput)
-	print("CraftLogger: Added To DB")
+	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()
 	
 	--Issue Handling for cast amount > 1

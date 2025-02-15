@@ -1,8 +1,15 @@
 local CraftLogger = select(2, ...)
 
+local systemPrint = print
+
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.UTIL = {}
+
+local print
+function CraftLogger.UTIL:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Util")
+end
 
 --Core
 function CraftLogger.UTIL:GetSchematicFormByVisibility()
@@ -161,23 +168,23 @@ end
 
 --Debug
 function CraftLogger.UTIL:PrintCraftTable(craftingReagentInfoTbl)
-	print("CraftLogger: Begin Table.")
+	systemPrint("CraftLogger: Begin Table.")
 	if #craftingReagentInfoTbl == 0 then
-		print("CraftLogger: Table Empty.")
+		systemPrint("CraftLogger: Table Empty.")
 		return
 	end
 	for _, reagent in pairs(craftingReagentInfoTbl) do
-		print(C_Item.GetItemNameByID(reagent.itemID))
-		print(reagent.quantity)
+		systemPrint(C_Item.GetItemNameByID(reagent.itemID))
+		systemPrint(reagent.quantity)
 	end
-	print("CraftLogger: End Table.")
+	systemPrint("CraftLogger: End Table.")
 end
 
 function CraftLogger.UTIL:PrintSchematicForm(recipeData)
-	print("CraftLogger: Begin Schematic.")
+	systemPrint("CraftLogger: Begin Schematic.")
 	local schematicForm = CraftLogger.UTIL:GetSchematicFormByVisibility()
 	if not schematicForm then
-		print("CraftLogger: No Schematic.")
+		systemPrint("CraftLogger: No Schematic.")
 		return
 	end
 	local schematicInfo = C_TradeSkillUI.GetRecipeSchematic(recipeData.recipeID, recipeData.isRecraft)
@@ -198,10 +205,10 @@ function CraftLogger.UTIL:PrintSchematicForm(recipeData)
 				local allocations = 0
 				if reagentAllocation ~= nil then
 					allocations = reagentAllocation:GetQuantity()
-					print(C_Item.GetItemNameByID(reagent.itemID))
-					--print("reagent #" .. i .. " allocation:")
-					--print(reagentAllocation)
-					print(allocations)
+					systemPrint(C_Item.GetItemNameByID(reagent.itemID))
+					--systemPrint("reagent #" .. i .. " allocation:")
+					--systemPrint(reagentAllocation)
+					systemPrint(allocations)
 				end
 			end
 		elseif reagentType == 0 then
@@ -210,19 +217,19 @@ function CraftLogger.UTIL:PrintSchematicForm(recipeData)
 				local button = requiredSelectableReagentSlot.Button
 				local allocatedItemID = button:GetItemID()
 				if allocatedItemID then
-					print("Set Required Selectable")
-					print(requiredSelectableReagentSlot.maxQuantity)
+					systemPrint("Set Required Selectable")
+					systemPrint(requiredSelectableReagentSlot.maxQuantity)
 				end
 			elseif reagentSlots[reagentType] ~= nil then
 				local optionalSlots = reagentSlots[reagentType][currentOptionalReagent]
 				if not optionalSlots then
-					print("End Optional")
+					systemPrint("End Optional")
 					error()
 				end
 				local button = optionalSlots.Button
 				local allocatedItemID = button:GetItemID()
 				if allocatedItemID then
-					print("Set Optional Reagent")
+					systemPrint("Set Optional Reagent")
 				end
 
 				currentOptionalReagent = currentOptionalReagent + 1
@@ -231,18 +238,18 @@ function CraftLogger.UTIL:PrintSchematicForm(recipeData)
 			if reagentSlots[reagentType] ~= nil then
 				local optionalSlots = reagentSlots[reagentType][currentFinishingReagent]
 				if not optionalSlots then
-					print("End Finishing")
+					systemPrint("End Finishing")
 					error()
 				end
 				local button = optionalSlots.Button
 				local allocatedItemID = button:GetItemID()
 				if allocatedItemID then
-					print("Set Optional Reagent")
+					systemPrint("Set Optional Reagent")
 				end
 
 				currentFinishingReagent = currentFinishingReagent + 1
 			end
 		end
 	end
-	print("CraftLogger: End Schematic.")
+	systemPrint("CraftLogger: End Schematic.")
 end

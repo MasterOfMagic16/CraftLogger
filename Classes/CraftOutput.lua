@@ -1,8 +1,15 @@
 local CraftLogger = select(2, ...)
 
+local systemPrint = print
+
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CraftOutput = CraftLogger.CraftLoggerObject:extend()
+
+local print
+function CraftLogger.CraftOutput:Init()
+	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.CraftOutput")
+end
 
 --For initializing CraftLoggerDB classes
 --Assume no further nested classes
@@ -29,7 +36,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	
 	local retOK, err = pcall(function() assert(recipeData.categoryID and recipeData.categoryID ~= 0, "CraftLogger: Categories Not Loaded. Please Open Profession Window.") end)
 	if not retOK then
-		print(err)
+		systemPrint(err)
 		return
 	end
 	
@@ -84,11 +91,11 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 			if reagentItem:IsOrderReagentIn(recipeData) then
 				local orderReagent = GUTIL:Find(recipeData.orderData.reagents, function(r) return r.reagent.itemID == itemID end)
 				if not orderReagent then
-					print("CraftLogger: Error, Order Reagent Not Found.")
+					systemPrint("CraftLogger: Error, Order Reagent Not Found.")
 					error()
 				end
 				if reagentItem.quantity ~= 0 and not (not reagent.hasQuality and reagentItem.quantity == orderReagent.reagent.quantity) then
-					print("CraftLogger: Error, Order Reagent Already Has Quantity.")
+					systemPrint("CraftLogger: Error, Order Reagent Already Has Quantity.")
 					error()
 				end
 				reagentItem.quantity = orderReagent.reagent.quantity
@@ -178,10 +185,10 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 end
 
 function CraftLogger.CraftOutput:Printing()
-	print("Recipe: " .. self.recipeName .. " @ " .. self.date)
+	systemPrint("Recipe: " .. self.recipeName .. " @ " .. self.date)
 
 	local qualityTitleOuter = (self.item.quality == nil and "") or ("*" .. self.item.quality)
-	print("Result: " .. self.item.itemName .. qualityTitleOuter .. ": x" .. self.item.quantity)
+	systemPrint("Result: " .. self.item.itemName .. qualityTitleOuter .. ": x" .. self.item.quantity)
 	
 	local allReagents = GUTIL:Concat({
 		self.reagents,
@@ -191,23 +198,23 @@ function CraftLogger.CraftOutput:Printing()
 	for _, reagent in pairs(allReagents) do
 		if reagent.quantity > 0 then 
 			local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-			print("Reagent: " .. reagent.itemName .. qualityTitle .. ": x" .. reagent.quantity)
+			systemPrint("Reagent: " .. reagent.itemName .. qualityTitle .. ": x" .. reagent.quantity)
 		end
 	end
 	
 	for _, reagent in pairs(allReagents) do
 		if reagent.quantityReturned then
 			local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-			print("savedReagent: " .. reagent.itemName .. qualityTitle .. ": x" .. reagent.quantityReturned)
+			systemPrint("savedReagent: " .. reagent.itemName .. qualityTitle .. ": x" .. reagent.quantityReturned)
 		end
 	end
 
 	local concentratingPrint = (self.concentration.concentrating == nil and "N/A") or tostring(self.concentration.concentrating)
 	local triggeredIngenuityPrint = (self.concentration.triggeredIngenuity == nil and "N/A") or tostring(self.concentration.triggeredIngenuity)
-	print("Concentrating: " .. concentratingPrint .. ", Triggered Ingenuity: " .. triggeredIngenuityPrint)
+	systemPrint("Concentrating: " .. concentratingPrint .. ", Triggered Ingenuity: " .. triggeredIngenuityPrint)
 	
 	for _, bonusStat in pairs(self.bonusStats) do
-		print(bonusStat.bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
+		systemPrint(bonusStat.bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
 	end
 end
 

@@ -28,8 +28,9 @@ function CraftLogger.Export:GetDBCraftOutputTable()
 end
 
 function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
+	CSDebug:StartProfiling("COPY")
 	local craftOutputTable = craftOutputTable:Copy()
-	
+	CSDebug:StopProfiling("COPY")
 	--Prep Data
 	CSDebug:StartProfiling("PREP DATA")
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
@@ -121,14 +122,15 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		table.insert(columns, title .. " Triggered Resourcefulness")
 		table.insert(columns, title .. " Resourcefulness Factor")
 	end
+	
+	local extractors = CraftLogger.Export:GetExtractors(columns)
 	CSDebug:StopProfiling("GET COLUMNS")
 	--Generate CSV
 	
+	CSDebug:StartProfiling("MAKE DATA")
 	local csvTable = {""}
-	local pos = 1
 	local function addLine(tbl)
-		csvTable[pos] = table.concat(tbl, ",")
-		pos = pos + 1
+		csvTable[#csvTable + 1] = table.concat(tbl, ",")
 	end
 	
 	local numColumns = #columns
@@ -140,25 +142,22 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		columnKeys[i] = column
 	end
 	
+	--Data
 	--Headers
 	addLine(columnKeys)
 	
-	--Data
-	CSDebug:StartProfiling("MAKE DATA")
 	
 	for i = 1, numCraftOutputs do
-		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
+		print("Check")
+		local co = craftOutputs[i]
 		local row = {}
-		for j = 1, numColumns do
-			local value = craftOutputMap[columnKeys[j]]
-			if value == nil then
-				row[j] = ""
-			else
-				row[j] = tostring(value)
-			end
+		for j = 1, #extractors do
+			local value = extractors[j](co)
+			row[j] = value == nil and "" or tostring(value)
 		end
 		addLine(row)
 	end
+	
 	CSDebug:StopProfiling("MAKE DATA")
 	
 	CSDebug:StartProfiling("TABLE COMBINE")
@@ -167,6 +166,141 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	
 	return csv
 end
+
+function CraftLogger.Export:GetExtractors(columns)
+	local extractors = {}
+	
+	local function insertBonusStatExtractor(str, colName, field)
+		local bonusStatKey = colName:sub(1, -#(str)-1)
+		table.insert(extractors, function(co)
+				local value
+				for _, bonusStat in ipairs(co.bonusStats) do
+					if bonusStat.bonusStatName == bonusStatKey then
+						value = bonusStat[field]
+						break
+					end
+				end
+				return value
+			end)
+	end
+	
+	local function insertReagentExtractor(str, colName, field)
+		local reagentKey = colName:sub(1, -#(str)-1)
+		table.insert(extractors, function(co)
+				local allReagents = GUTIL:Concat({
+				co.reagents,
+				co.optionalReagents,
+				})
+				
+				local value
+				for _, reagent in ipairs(allReagents) do
+					local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
+					local title = reagent.itemName .. qualityTitle
+					if title == reagentKey then
+						value = reagent[field]
+						break
+					end
+				end
+				return value
+			end)
+	end
+	
+	for _, colName in ipairs(columns) do
+		if colName == "Date" then
+			table.insert(extractors, function(co) return co.date end)
+		elseif colName == "Game Version" then
+			table.insert(extractors, function(co) return co.gameVersion end)
+		elseif colName == "CraftSim Version" then
+			table.insert(extractors, function(co) return co.craftSimVersion end)
+		elseif colName == "CraftLogger Version" then
+			table.insert(extractors, function(co) return co.craftLoggerVersion end)
+		elseif colName == "Crafter UID" then
+			table.insert(extractors, function(co) return co.crafterUID end)
+		elseif colName == "Work Order" then
+			table.insert(extractors, function(co) return co.isWorkOrder end)
+		elseif colName == "Recraft" then
+			table.insert(extractors, function(co) return co.isRecraft end)
+		elseif colName == "Gear" then
+			table.insert(extractors, function(co) return co.isGear end)
+		elseif colName == "Item Level" then
+			table.insert(extractors, function(co) return co.itemLevel end)
+		elseif colName == "Soulbound" then
+			table.insert(extractors, function(co) return co.isSoulbound end)
+		elseif colName == "Old World Recipe" then
+			table.insert(extractors, function(co) return co.isOldWorldRecipe end)
+		elseif colName == "Expansion" then
+			table.insert(extractors, function(co) return co.expansionName end)
+		elseif colName == "Profession" then
+			table.insert(extractors, function(co) return co.profession end)
+		elseif colName == "Category ID" then
+			table.insert(extractors, function(co) return co.categoryID end)
+		elseif colName == "Category Name" then
+			table.insert(extractors, function(co) return co.categoryName end)
+		elseif colName == "Recipe ID" then
+			table.insert(extractors, function(co) return co.recipeID end)
+		elseif colName == "Recipe Name" then
+			table.insert(extractors, function(co) return co.recipeName end)
+		elseif colName == "Enchanting Target ID" then
+			table.insert(extractors, function(co) return co.enchantTargetItemID end)
+		elseif colName == "Enchanting Target Name" then
+			table.insert(extractors, function(co) return co.enchantTargetItemName end)
+		elseif colName == "Item ID" then
+			table.insert(extractors, function(co) return co.item.itemID end)
+		elseif colName == "Item Name" then
+			table.insert(extractors, function(co) return co.item.itemName end)
+		elseif colName == "Item Quality" then
+			table.insert(extractors, function(co) return co.item.quality end)
+		elseif colName == "Normal Quantity" then
+			table.insert(extractors, function(co) return co.item.normalQuantity end)
+		elseif colName == "Produced Quantity" then
+			table.insert(extractors, function(co) return co.item.quantity end)
+		elseif colName == "Extra Quantity" then
+			table.insert(extractors, function(co) return co.item.extraQuantity end)
+		elseif colName == "Triggered Multicraft" then
+			table.insert(extractors, function(co) return co.item.triggeredMulticraft end)
+		elseif colName == "Multicraft Factor" then
+			table.insert(extractors, function(co) return co.item.multicraftFactor end)
+		elseif colName == "Concentrating" then
+			table.insert(extractors, function(co) return co.concentration.concentrating end)
+		elseif colName == "Concentration Spent" then
+			table.insert(extractors, function(co) return co.concentration.concentrationSpent end)
+		elseif colName == "Concentration Refunded" then
+			table.insert(extractors, function(co) return co.concentration.ingenuityRefund end)
+		elseif colName == "Triggered Ingenuity" then
+			table.insert(extractors, function(co) return co.concentration.triggeredIngenuity end)
+		elseif colName == "Resourcefulness-Eligible Reagent Types Used" then
+			table.insert(extractors, function(co) return co.typesUsed end)
+		elseif colName == "Resourcefulness-Eligible Reagent Types Returned" then
+			table.insert(extractors, function(co) return co.typesReturned end)
+		
+		elseif colName:find(" Value") then
+			insertBonusStatExtractor(" Value", colName, "bonusStatValue")
+		elseif colName:find(" Percent") then
+			insertBonusStatExtractor(" Percent", colName, "ratingPct")
+		elseif colName:find(" Bonus") then
+			insertBonusStatExtractor(" Bonus", colName, "extraValue")
+			
+		elseif colName:find(" ID") then
+			insertReagentExtractor(" ID", colName, "itemID")
+		elseif colName:find(" Provided By Customer") then
+			insertReagentExtractor(" Provided By Customer", colName, "isOrderReagentIn")
+		elseif colName:find(" Consumed Quantity") then
+			insertReagentExtractor(" Consumed Quantity", colName, "quantity")
+		elseif colName:find(" Returned Quantity") then
+			insertReagentExtractor(" Returned Quantity", colName, "returnedQuantity")
+		elseif colName:find(" Triggered Resourcefulness") then
+			insertReagentExtractor(" Triggered Resourcefulness", colName, "triggeredResourcefulness")
+		elseif colName:find(" Resourcefulness Factor") then
+			insertReagentExtractor(" Resourcefulness Factor", colName, "resourcefulnessFactor")
+			
+		else
+			table.insert(extractors, function() return "No Column Function" end)
+		end
+	end
+	
+	return extractors
+end
+
 
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 	--Do Not Manipulate Craft Output! No Nested Tables!
@@ -234,3 +368,4 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 	
 	return map
 end
+

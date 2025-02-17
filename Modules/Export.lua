@@ -138,48 +138,42 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	
 	local csvTable = {""}
 	local pos = 1
-	local function add(text)
-		csvTable[pos] = text 
+	local function addLine(tbl)
+		csvTable[pos] = table.concat(tbl, ",")
+		pos = pos + 1
+		csvTable[pos] = "\n"
 		pos = pos + 1
 	end
 	
-	local function join(data)
-		if data == nil then
-			add(",")
-		else
-			add(tostring(data) .. ",")
-		end
+	local columnKeys = {}
+	for i, column in ipairs(columns) do
+		columnKeys[i] = column
 	end
 	
-	local function new()
-		add("\n")
-	end
+	
 	
 	local numColumns = #columns
 	local craftOutputs = craftOutputTable.craftOutputs
+	local numCraftOutputs = #craftOutputs
 	
 	--Headers
-	for i = 1, numColumns do
-		join(columns[i])
-	end
-	new()
+	addLine(columnKeys)
 	
+
 	--Data
 	CSDebug:StartProfiling("MAKE DATA")
-	for i = 1, #craftOutputs do
+	for i = 1, numCraftOutputs do
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
-		
 		local row = {}
 		for j = 1, numColumns do
-			local data = craftOutputMap[columns[j]]
-			if data == nil then
-				row[#row + 1] = ""
+			local value = craftOutputMap[columnKeys[j]]
+			if value == nil then
+				row[j] = ""
 			else
-				row[#row + 1] = tostring(craftOutputMap[columns[j]])
+				row[j] = tostring(value)
 			end
 		end
-		row[#row + 1] = "\n"
-		table.insert(csvTable, table.concat(row, ","))
+		addLine(row)
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 	

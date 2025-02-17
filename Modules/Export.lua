@@ -4,9 +4,16 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.Export = {}
 
+local CSDebug
+function CraftLogger.Export:Init()
+	CSDebug = CraftSimAPI:GetCraftSim().DEBUG
+end
+
 function CLExport()
 	local craftOutputTable = CraftLogger.Export:GetDBCraftOutputTable()
+	CSDebug:StartProfiling("GET EXPORT TEXT")
 	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
+	CSDebug:StopProfiling("GET EXPORT TEXT")
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 end
 
@@ -22,14 +29,17 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local craftOutputTable = craftOutputTable:Copy()
 	
 	--Prep Data
+	CSDebug:StartProfiling("PREP DATA")
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
 		craftOutput:SetOtherStats()
 		craftOutput:SetMulticraftStats()
 		craftOutput:SetResourcefulnessStats()
 		craftOutput:SetIngenuityStats()
 	end
+	CSDebug:StopProfiling("PREP DATA")
 	
 	--Prep Variable Columns
+	CSDebug:StartProfiling("GET COLUMNS")
 	local optionalReagentsList = {}
 	local reagentsList = {}
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
@@ -115,35 +125,79 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		table.insert(columns, title .. " Triggered Resourcefulness")
 		table.insert(columns, title .. " Resourcefulness Factor")
 	end
-	
+	CSDebug:StopProfiling("GET COLUMNS")
 	--Generate CSV
-	local function join(basedata, data) 
-		if data ~= nil then
-			return basedata .. tostring(data) .. "," 
-		else
-			return basedata .. ","
-		end
+	
+	local csvTable = {""}
+	
+	--2965 ms
+	--[[
+    local function addString (stack, s)
+      table.insert(stack, s)    -- push 's' into the the stack
+      for i=table.getn(stack)-1, 1, -1 do
+        if string.len(stack[i]) > string.len(stack[i+1]) then
+          break
+        end
+        stack[i] = stack[i] .. table.remove(stack)
+      end
+    end
+	]]
+	
+	--1834 ms
+	local function addString(stack, s)
+		table.insert(stack, s)
 	end
 	
-	local csv = ""
+	local function join(data)
+		data = (data == nil and "") or tostring(data)
+		table.insert(csvTable, data .. ",")
+	end
+	
+	local function new()
+		table.insert(csvTable, "\n")
+	end
 	
 	--Headers
 	for _, column in ipairs(columns) do
-		csv = join(csv, column)
+		join(column)
 	end
-	csv = csv .. "\n"
-	
+	new()
 	--Data
+	local totalprepare = 0
+	local totalcolumns = 0
+	local totalswitch = 0
+	CSDebug:StartProfiling("MAKE DATA")
+	CSDebug:StartProfiling("SWITCH")
 	for _, craftOutput in ipairs(craftOutputTable.craftOutputs) do
+		totalswitch = totalswitch + CSDebug:StopProfiling("SWITCH")
+		CSDebug:StartProfiling("MAP DATA")
+		
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		
-		local line = ""
-		for _, column in ipairs(columns) do
-			line = join(line, craftOutputMap[column])
-		end
+		totalprepare = totalprepare + CSDebug:StopProfiling("MAP DATA")
 		
-		csv = csv .. line .. "\n"
+		CSDebug:StartProfiling("MAP COLUMNS")
+		
+		for _, column in ipairs(columns) do
+			join(craftOutputMap[column])
+		end
+		new()
+
+		totalcolumns = totalcolumns + CSDebug:StopProfiling("MAP COLUMNS")
+		CSDebug:StartProfiling("SWITCH")
 	end
+	totalswitch = totalswitch + CSDebug:StopProfiling("SWITCH")
+	CSDebug:StopProfiling("MAKE DATA")
+	
+	CSDebug:StartProfiling("TABLE COMBINE")
+	
+	csv = table.concat(csvTable)
+	
+	CSDebug:StopProfiling("TABLE COMBINE")
+	
+	print(totalprepare)
+	print(totalcolumns)
+	print(totalswitch)
 	
 	return csv
 end

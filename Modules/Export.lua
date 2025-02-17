@@ -122,8 +122,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		table.insert(columns, title .. " Triggered Resourcefulness")
 		table.insert(columns, title .. " Resourcefulness Factor")
 	end
-	
-	local extractors = CraftLogger.Export:GetExtractors(columns)
 	CSDebug:StopProfiling("GET COLUMNS")
 	--Generate CSV
 	
@@ -146,13 +144,36 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	--Headers
 	addLine(columnKeys)
 	
-	
+	local extractors = CraftLogger.Export:GetExtractors(columns)
 	for i = 1, numCraftOutputs do
-		print("Check")
 		local co = craftOutputs[i]
+		
+		local bonusMap = {}
+        local bonusStats = co.bonusStats
+        for j = 1, #bonusStats do
+            local stat = bonusStats[j]
+            bonusMap[stat.bonusStatName] = stat
+        end
+		
+		local reagentMap = {}
+		local reagents = co.reagents
+        for j = 1, #reagents do
+            local reagent = reagents[j]
+            local qualityTitle = (reagent.quality == nil) and "" or ("*" .. reagent.quality)
+            reagentMap[reagent.itemName .. qualityTitle] = reagent
+        end
+		
+		local optionalReagentMap = {}
+		local optReagents = co.optionalReagents
+        for j = 1, #optReagents do
+            local reagent = optReagents[j]
+            local qualityTitle = (reagent.quality == nil) and "" or ("*" .. reagent.quality)
+            optionalReagentMap[reagent.itemName .. qualityTitle] = reagent
+        end
+		
 		local row = {}
 		for j = 1, #extractors do
-			local value = extractors[j](co)
+			local value = extractors[j](co, bonusMap, reagentMap, optionalReagentMap)
 			row[j] = value == nil and "" or tostring(value)
 		end
 		addLine(row)
@@ -170,39 +191,20 @@ end
 function CraftLogger.Export:GetExtractors(columns)
 	local extractors = {}
 	
-	local function insertBonusStatExtractor(str, colName, field)
-		local bonusStatKey = colName:sub(1, -#(str)-1)
-		table.insert(extractors, function(co)
-				local value
-				for _, bonusStat in ipairs(co.bonusStats) do
-					if bonusStat.bonusStatName == bonusStatKey then
-						value = bonusStat[field]
-						break
-					end
-				end
-				return value
-			end)
+	local function createBonusExtractor(colName, suffix, field)
+		local bonusKey = colName:sub(1, -#suffix - 1)
+		return function(co, bonusMap, reagentMap, optionalReagentMap)
+			local stat = bonusMap[bonusKey]
+			return stat and stat[field] or nil
+		end
 	end
 	
-	local function insertReagentExtractor(str, colName, field)
-		local reagentKey = colName:sub(1, -#(str)-1)
-		table.insert(extractors, function(co)
-				local allReagents = GUTIL:Concat({
-				co.reagents,
-				co.optionalReagents,
-				})
-				
-				local value
-				for _, reagent in ipairs(allReagents) do
-					local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-					local title = reagent.itemName .. qualityTitle
-					if title == reagentKey then
-						value = reagent[field]
-						break
-					end
-				end
-				return value
-			end)
+	local function createReagentExtractor(colName, suffix, field)
+		local reagentKey = colName:sub(1, -#suffix - 1)
+		return function(co, bonusMap, reagentMap, optionalReagentMap)
+			local reagent = reagentMap[reagentKey] or optionalReagentMap[reagentKey]
+			return reagent and reagent[field] or nil
+		end
 	end
 	
 	for _, colName in ipairs(columns) do
@@ -274,28 +276,30 @@ function CraftLogger.Export:GetExtractors(columns)
 			table.insert(extractors, function(co) return co.typesReturned end)
 		
 		elseif colName:find(" Value") then
-			insertBonusStatExtractor(" Value", colName, "bonusStatValue")
+			table.insert(extractors, createBonusExtractor(colName, " Value", "bonusStatValue"))
 		elseif colName:find(" Percent") then
-			insertBonusStatExtractor(" Percent", colName, "ratingPct")
+			table.insert(extractors, createBonusExtractor(colName, " Percent", "ratingPct"))
 		elseif colName:find(" Bonus") then
-			insertBonusStatExtractor(" Bonus", colName, "extraValue")
+			table.insert(extractors, createBonusExtractor(colName, " Bonus", "extraValue"))
+	
 			
 		elseif colName:find(" ID") then
-			insertReagentExtractor(" ID", colName, "itemID")
+			table.insert(extractors, createReagentExtractor(colName, " ID", "itemID"))
 		elseif colName:find(" Provided By Customer") then
-			insertReagentExtractor(" Provided By Customer", colName, "isOrderReagentIn")
+			table.insert(extractors, createReagentExtractor(colName, " Provided By Customer", "isOrderReagentIn"))
 		elseif colName:find(" Consumed Quantity") then
-			insertReagentExtractor(" Consumed Quantity", colName, "quantity")
+			table.insert(extractors, createReagentExtractor(colName, " Consumed Quantity", "quantity"))
 		elseif colName:find(" Returned Quantity") then
-			insertReagentExtractor(" Returned Quantity", colName, "returnedQuantity")
+			table.insert(extractors, createReagentExtractor(colName, " Returned Quantity", "quantityReturned"))
 		elseif colName:find(" Triggered Resourcefulness") then
-			insertReagentExtractor(" Triggered Resourcefulness", colName, "triggeredResourcefulness")
+			table.insert(extractors, createReagentExtractor(colName, " Triggered Resourcefulness", "triggeredResourcefulness"))
 		elseif colName:find(" Resourcefulness Factor") then
-			insertReagentExtractor(" Resourcefulness Factor", colName, "resourcefulnessFactor")
-			
+			table.insert(extractors, createReagentExtractor(colName, " Resourcefulness Factor", "resourcefulnessFactor"))
+		
 		else
 			table.insert(extractors, function() return "No Column Function" end)
 		end
+
 	end
 	
 	return extractors

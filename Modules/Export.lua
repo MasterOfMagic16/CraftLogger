@@ -43,25 +43,29 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	--Prep Variable Columns
 	CSDebug:StartProfiling("GET COLUMNS")
 	local optionalReagentsList = {}
+	local optionalReagentsSeen = {}
 	local reagentsList = {}
+	local reagentsSeen = {}
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
 		for _, reagent in pairs(craftOutput.optionalReagents) do
-			if not optionalReagentsList[reagent.itemID] then 
-				optionalReagentsList[reagent.itemID] = {
+			if not optionalReagentsSeen[reagent.itemID] then 
+				optionalReagentsSeen[reagent.itemID] = true
+				table.insert(optionalReagentsList, {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,
 					quality = reagent.quality,
-					}
+					})
 			end
 		end
 		
 		for _, reagent in pairs(craftOutput.reagents) do
-			if not reagentsList[reagent.itemID] then 
-				reagentsList[reagent.itemID] = {
+			if not reagentsSeen[reagent.itemID] then 
+				reagentsSeen[reagent.itemID] = true
+				table.insert(reagentsList, {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,
 					quality = reagent.quality,
-					}
+					})
 			end
 		end
 	end

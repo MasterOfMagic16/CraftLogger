@@ -48,8 +48,9 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local reagentsSeen = {}
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
 		for _, reagent in pairs(craftOutput.optionalReagents) do
-			if not optionalReagentsSeen[reagent.itemID] then 
-				optionalReagentsSeen[reagent.itemID] = true
+			local key = reagent.itemID
+			if not optionalReagentsSeen[key] then 
+				optionalReagentsSeen[key] = true
 				table.insert(optionalReagentsList, {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,
@@ -59,8 +60,9 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		end
 		
 		for _, reagent in pairs(craftOutput.reagents) do
-			if not reagentsSeen[reagent.itemID] then 
-				reagentsSeen[reagent.itemID] = true
+			local key = reagent.itemID
+			if not reagentsSeen[key] then 
+				reagentsSeen[key] = true
 				table.insert(reagentsList, {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,

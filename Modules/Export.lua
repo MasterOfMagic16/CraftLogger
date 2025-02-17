@@ -169,10 +169,17 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	for i = 1, #craftOutputs do
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
 		
+		local row = {}
 		for j = 1, numColumns do
-			join(craftOutputMap[columns[j]])
+			local data = craftOutputMap[columns[j]]
+			if data == nil then
+				row[#row + 1] = ""
+			else
+				row[#row + 1] = tostring(craftOutputMap[columns[j]])
+			end
 		end
-		new()
+		row[#row + 1] = "\n"
+		table.insert(csvTable, table.concat(row, ","))
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 	

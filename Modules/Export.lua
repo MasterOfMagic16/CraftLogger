@@ -178,7 +178,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 end
 
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
-	craftOutput = craftOutput:Copy()
+	--Do Not Manipulate Craft Output! No Nested Tables!
 	
 	--Set Data to Column Names
 	local map = {

@@ -129,32 +129,18 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	--Generate CSV
 	
 	local csvTable = {""}
-	
-	--2965 ms
-	--[[
-    local function addString (stack, s)
-      table.insert(stack, s)    -- push 's' into the the stack
-      for i=table.getn(stack)-1, 1, -1 do
-        if string.len(stack[i]) > string.len(stack[i+1]) then
-          break
-        end
-        stack[i] = stack[i] .. table.remove(stack)
-      end
-    end
-	]]
-	
-	--1834 ms
-	local function addString(stack, s)
-		table.insert(stack, s)
+	local pos = 1
+	local function add(text)
+		csvTable[pos] = text 
+		pos = pos + 1
 	end
 	
 	local function join(data)
-		data = (data == nil and "") or tostring(data)
-		table.insert(csvTable, data .. ",")
+		add(((data == nil and "") or tostring(data)) .. ",")
 	end
 	
 	local function new()
-		table.insert(csvTable, "\n")
+		add("\n")
 	end
 	
 	--Headers
@@ -162,6 +148,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		join(column)
 	end
 	new()
+	
 	--Data
 	local totalprepare = 0
 	local totalcolumns = 0
@@ -191,7 +178,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	
 	CSDebug:StartProfiling("TABLE COMBINE")
 	
-	csv = table.concat(csvTable)
+	local csv = table.concat(csvTable)
 	
 	CSDebug:StopProfiling("TABLE COMBINE")
 	

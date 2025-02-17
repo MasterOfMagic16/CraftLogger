@@ -33,29 +33,21 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	--Prep Data
 	CSDebug:StartProfiling("PREP DATA")
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
-		craftOutput:SetOtherStats()
-		craftOutput:SetMulticraftStats()
-		craftOutput:SetResourcefulnessStats()
-		craftOutput:SetIngenuityStats()
+		craftOutput:SetAllStats()
 	end
 	CSDebug:StopProfiling("PREP DATA")
 	
 	--Prep Variable Columns
 	CSDebug:StartProfiling("GET COLUMNS")
-	local optionalReagentsList = {}
-	local optionalReagentsSeen = {}
-	local reagentsList = {}
-	local reagentsSeen = {}
+	local optionalReagentsList, reagentsList = {}, {}
+	local optionalReagentsSeen, reagentsSeen = {}, {}
+	
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
 		for _, reagent in pairs(craftOutput.optionalReagents) do
 			local key = reagent.itemID
 			if not optionalReagentsSeen[key] then 
 				optionalReagentsSeen[key] = true
-				table.insert(optionalReagentsList, {
-					itemID = reagent.itemID,
-					itemName = reagent.itemName,
-					quality = reagent.quality,
-					})
+				optionalReagentsList[#optionalReagentsList + 1] = reagent
 			end
 		end
 		
@@ -63,11 +55,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 			local key = reagent.itemID
 			if not reagentsSeen[key] then 
 				reagentsSeen[key] = true
-				table.insert(reagentsList, {
-					itemID = reagent.itemID,
-					itemName = reagent.itemName,
-					quality = reagent.quality,
-					})
+				reagentsList[#reagentsList + 1] = reagent
 			end
 		end
 	end
@@ -141,27 +129,23 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local function addLine(tbl)
 		csvTable[pos] = table.concat(tbl, ",")
 		pos = pos + 1
-		csvTable[pos] = "\n"
-		pos = pos + 1
 	end
+	
+	local numColumns = #columns
+	local craftOutputs = craftOutputTable.craftOutputs
+	local numCraftOutputs = #craftOutputs
 	
 	local columnKeys = {}
 	for i, column in ipairs(columns) do
 		columnKeys[i] = column
 	end
 	
-	
-	
-	local numColumns = #columns
-	local craftOutputs = craftOutputTable.craftOutputs
-	local numCraftOutputs = #craftOutputs
-	
 	--Headers
 	addLine(columnKeys)
 	
-
 	--Data
 	CSDebug:StartProfiling("MAKE DATA")
+	
 	for i = 1, numCraftOutputs do
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
 		local row = {}
@@ -178,7 +162,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	CSDebug:StopProfiling("MAKE DATA")
 	
 	CSDebug:StartProfiling("TABLE COMBINE")
-	local csv = table.concat(csvTable)
+	local csv = table.concat(csvTable, "\n")
 	CSDebug:StopProfiling("TABLE COMBINE")
 	
 	return csv

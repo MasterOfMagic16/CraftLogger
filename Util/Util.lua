@@ -66,7 +66,8 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 		-- EditBox
 		local eb = CreateFrame("EditBox", "KethoEditBoxEditBox", KethoEditBoxScrollFrame)
 		eb:SetSize(sf:GetSize())
-		eb:SetMultiLine(true)
+		--eb:SetMultiLine(true)
+		eb:GetRegions():SetNonSpaceWrap(false)
 		eb:SetAutoFocus(false) -- dont automatically focus
 		eb:SetFontObject("ChatFontNormal")
 		eb:SetScript("OnEscapePressed", function() f:Hide() end)

@@ -46,22 +46,22 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local reagentsList = {}
 	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
 		for _, reagent in pairs(craftOutput.optionalReagents) do
-			if not GUTIL:Some(optionalReagentsList, function(r) return r.itemID == reagent.itemID end) then
-				table.insert(optionalReagentsList, {
+			if not optionalReagentsList[reagent.itemID] then 
+				optionalReagentsList[reagent.itemID] = {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,
 					quality = reagent.quality,
-					})
+					}
 			end
 		end
 		
 		for _, reagent in pairs(craftOutput.reagents) do
-			if not GUTIL:Some(reagentsList, function(r) return r.itemID == reagent.itemID end) then
-				table.insert(reagentsList, {
+			if not reagentsList[reagent.itemID] then 
+				reagentsList[reagent.itemID] = {
 					itemID = reagent.itemID,
 					itemName = reagent.itemName,
-					quality = reagent.quality
-					})
+					quality = reagent.quality,
+					}
 			end
 		end
 	end

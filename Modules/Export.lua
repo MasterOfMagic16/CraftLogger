@@ -10,11 +10,13 @@ function CraftLogger.Export:Init()
 end
 
 function CLExport()
+	CSDebug:StartProfiling("OVERALL EXPORT")
 	local craftOutputTable = CraftLogger.Export:GetDBCraftOutputTable()
 	CSDebug:StartProfiling("GET EXPORT TEXT")
 	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	CSDebug:StopProfiling("GET EXPORT TEXT")
 	CraftLogger.UTIL:KethoEditBox_Show(text)
+	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
 function CraftLogger.Export:GetDBCraftOutputTable()
@@ -147,54 +149,30 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		add("\n")
 	end
 	
-	--Headers
 	local numColumns = #columns
 	local craftOutputs = craftOutputTable.craftOutputs
 	
+	--Headers
 	for i = 1, numColumns do
 		join(columns[i])
 	end
 	new()
 	
 	--Data
-	local totalprepare = 0
-	local totalcolumns = 0
-	local totalswitch = 0
 	CSDebug:StartProfiling("MAKE DATA")
-	CSDebug:StartProfiling("SWITCH")
-	
-	
-	
 	for i = 1, #craftOutputs do
-		totalswitch = totalswitch + CSDebug:StopProfiling("SWITCH")
-		CSDebug:StartProfiling("MAP DATA")
-		
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
-		
-		totalprepare = totalprepare + CSDebug:StopProfiling("MAP DATA")
-		
-		CSDebug:StartProfiling("MAP COLUMNS")
 		
 		for j = 1, numColumns do
 			join(craftOutputMap[columns[j]])
 		end
 		new()
-
-		totalcolumns = totalcolumns + CSDebug:StopProfiling("MAP COLUMNS")
-		CSDebug:StartProfiling("SWITCH")
 	end
-	totalswitch = totalswitch + CSDebug:StopProfiling("SWITCH")
 	CSDebug:StopProfiling("MAKE DATA")
 	
 	CSDebug:StartProfiling("TABLE COMBINE")
-	
 	local csv = table.concat(csvTable)
-	
 	CSDebug:StopProfiling("TABLE COMBINE")
-	
-	print(totalprepare)
-	print(totalcolumns)
-	print(totalswitch)
 	
 	return csv
 end

@@ -136,7 +136,11 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	end
 	
 	local function join(data)
-		add(((data == nil and "") or tostring(data)) .. ",")
+		if data == nil then
+			add(",")
+		else
+			add(tostring(data) .. ",")
+		end
 	end
 	
 	local function new()
@@ -144,8 +148,11 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	end
 	
 	--Headers
-	for _, column in ipairs(columns) do
-		join(column)
+	local numColumns = #columns
+	local craftOutputs = craftOutputTable.craftOutputs
+	
+	for i = 1, numColumns do
+		join(columns[i])
 	end
 	new()
 	
@@ -155,18 +162,21 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local totalswitch = 0
 	CSDebug:StartProfiling("MAKE DATA")
 	CSDebug:StartProfiling("SWITCH")
-	for _, craftOutput in ipairs(craftOutputTable.craftOutputs) do
+	
+	
+	
+	for i = 1, #craftOutputs do
 		totalswitch = totalswitch + CSDebug:StopProfiling("SWITCH")
 		CSDebug:StartProfiling("MAP DATA")
 		
-		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
+		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutputs[i])
 		
 		totalprepare = totalprepare + CSDebug:StopProfiling("MAP DATA")
 		
 		CSDebug:StartProfiling("MAP COLUMNS")
 		
-		for _, column in ipairs(columns) do
-			join(craftOutputMap[column])
+		for j = 1, numColumns do
+			join(craftOutputMap[columns[j]])
 		end
 		new()
 

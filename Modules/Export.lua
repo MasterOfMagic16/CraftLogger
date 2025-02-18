@@ -11,30 +11,80 @@ end
 
 function CLExport()
 	CSDebug:StartProfiling("OVERALL EXPORT")
-	local craftOutputTable = CraftLogger.Export:GetDBCraftOutputTable()
+	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
 	CSDebug:StartProfiling("GET EXPORT TEXT")
-	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
+	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	CSDebug:StopProfiling("GET EXPORT TEXT")
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
-function CraftLogger.Export:GetDBCraftOutputTable()
+function CraftLogger.Export:GetDBCraftOutputs()
 	local craftOutputs = GUTIL:Map(CraftLoggerDB, 
 		function(co) 
 		return CraftLogger.CraftOutput(co)
 		end)
-	return CraftLogger.CraftOutputTable(craftOutputs)
+	return craftOutputs
 end
 
-function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
-	CSDebug:StartProfiling("COPY")
-	local craftOutputTable = craftOutputTable:Copy()
-	CSDebug:StopProfiling("COPY")
+function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	--Prep Data
 	CSDebug:StartProfiling("PREP DATA")
-	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
-		craftOutput:SetAllStats()
+	for _, craftOutput in pairs(craftOutputs) do
+		local professionInfo = C_TradeSkillUI.GetProfessionInfoByRecipeID(craftOutput.recipeID)
+		craftOutput.profession = professionInfo.parentProfessionName
+		craftOutput.expansionName = professionInfo.expansionName
+		
+		craftOutput.isOldWorldRecipe = craftOutput.expansionID <= 8
+		
+		craftOutput.isGear = C_Item.GetItemInventoryTypeByID(craftOutput.item.itemID) ~= 0
+		local bindType = select(14, C_Item.GetItemInfo(craftOutput.item.itemID))
+		craftOutput.isSoulbound = 	bindType == Enum.ItemBind.OnAcquire or
+							bindType == Enum.ItemBind.Quest or
+							bindType == Enum.ItemBind.ToWoWAccount or
+							bindType == Enum.ItemBind.ToBnetAccount
+		
+		--Normal Quantity
+		craftOutput.item.normalQuantity = craftOutput.item.quantity - (craftOutput.item.extraQuantity or 0)
+		
+		if GUTIL:Find(craftOutput.bonusStats, function(bs) return bs.bonusStatName == "multicraft" end) then
+			--Triggered Multicraft
+			--Multicraft Factor
+			if craftOutput.item.extraQuantity then
+				craftOutput.item.triggeredMulticraft = true
+				craftOutput.item.multicraftFactor = craftOutput.item.extraQuantity / craftOutput.item.normalQuantity
+			else
+				craftOutput.item.triggeredMulticraft = false
+				craftOutput.item.multicraftFactor = nil
+			end
+		end
+		
+		if GUTIL:Find(craftOutput.bonusStats, function(bs) return bs.bonusStatName == "resourcefulness" end) then
+			local typesUsed = 0
+			local typesReturned = 0
+			for _, reagent in pairs(craftOutput.reagents) do
+				typesUsed = typesUsed + 1
+				
+				if reagent.quantityReturned then
+					typesReturned = typesReturned + 1
+					reagent.triggeredResourcefulness = true
+					reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
+				else
+					reagent.triggeredResourcefulness = false
+					reagent.resourcefulnessFactor = nil
+				end
+			end
+			craftOutput.typesUsed = typesUsed
+			craftOutput.typesReturned = typesReturned
+		end
+		
+		if GUTIL:Find(craftOutput.bonusStats, function(bs) return bs.bonusStatName == "ingenuity" end) then
+			if craftOutput.concentration.concentrating and craftOutput.concentration.triggeredIngenuity then
+				craftOutput.concentration.ingenuityRefund = math.ceil(craftOutput.concentration.concentrationSpent / 2)
+			else
+				craftOutput.concentration.ingenuityRefund = nil
+			end
+		end
 	end
 	CSDebug:StopProfiling("PREP DATA")
 	
@@ -43,7 +93,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	local optionalReagentsList, reagentsList = {}, {}
 	local optionalReagentsSeen, reagentsSeen = {}, {}
 	
-	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
+	for _, craftOutput in ipairs(craftOutputs) do
 		for _, reagent in pairs(craftOutput.optionalReagents) do
 			local key = reagent.itemID
 			if not optionalReagentsSeen[key] then 
@@ -132,7 +182,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 	end
 	
 	local numColumns = #columns
-	local craftOutputs = craftOutputTable.craftOutputs
 	local numCraftOutputs = #craftOutputs
 	
 	local columnKeys = {}
@@ -195,7 +244,7 @@ function CraftLogger.Export:GetExtractors(columns)
 		local bonusKey = colName:sub(1, -#suffix - 1)
 		return function(co, bonusMap, reagentMap, optionalReagentMap)
 			local stat = bonusMap[bonusKey]
-			return stat and stat[field] or nil
+			return stat and stat[field]
 		end
 	end
 	
@@ -203,7 +252,7 @@ function CraftLogger.Export:GetExtractors(columns)
 		local reagentKey = colName:sub(1, -#suffix - 1)
 		return function(co, bonusMap, reagentMap, optionalReagentMap)
 			local reagent = reagentMap[reagentKey] or optionalReagentMap[reagentKey]
-			return reagent and reagent[field] or nil
+			return reagent and reagent[field]
 		end
 	end
 	
@@ -297,79 +346,11 @@ function CraftLogger.Export:GetExtractors(columns)
 			table.insert(extractors, createReagentExtractor(colName, " Resourcefulness Factor", "resourcefulnessFactor"))
 		
 		else
-			table.insert(extractors, function() return "No Column Function" end)
+			table.insert(extractors, function() return nil end)
 		end
 
 	end
 	
 	return extractors
-end
-
-
-function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
-	--Do Not Manipulate Craft Output! No Nested Tables!
-	
-	--Set Data to Column Names
-	local map = {
-		["Date"] = craftOutput.date,
-		["Game Version"] = craftOutput.gameVersion,
-		["CraftSim Version"] = craftOutput.craftSimVersion,
-		["CraftLogger Version"] = craftOutput.craftLoggerVersion,
-		["Crafter UID"] = craftOutput.crafterUID,
-		["Work Order"] = craftOutput.isWorkOrder,
-		["Recraft"] = craftOutput.isRecraft,
-		["Gear"] = craftOutput.isGear,
-		["Item Level"] = craftOutput.itemLevel,
-		["Soulbound"] = craftOutput.isSoulbound,
-		["Old World Recipe"] = craftOutput.isOldWorldRecipe,
-		["Expansion"] = craftOutput.expansionName,
-		["Profession"] = craftOutput.profession,
-		["Category ID"] = craftOutput.categoryID,
-		["Category Name"] = craftOutput.categoryName,
-		["Recipe ID"] = craftOutput.recipeID,
-		["Recipe Name"] = craftOutput.recipeName,
-		["Enchanting Target ID"] = craftOutput.enchantTargetItemID,
-		["Enchanting Target Name"] = craftOutput.enchantTargetItemName,
-		["Item ID"] = craftOutput.item.itemID,
-		["Item Name"] = craftOutput.item.itemName,
-		["Item Quality"] = craftOutput.item.quality,
-		["Normal Quantity"] = craftOutput.item.normalQuantity,
-		["Produced Quantity"] = craftOutput.item.quantity,
-		["Extra Quantity"] = craftOutput.item.extraQuantity,
-		["Triggered Multicraft"] = craftOutput.item.triggeredMulticraft,
-		["Multicraft Factor"] = craftOutput.item.multicraftFactor,
-		["Concentrating"] = craftOutput.concentration.concentrating,
-		["Concentration Spent"] = craftOutput.concentration.concentrationSpent,
-		["Concentration Refunded"] = craftOutput.concentration.ingenuityRefund,
-		["Triggered Ingenuity"] = craftOutput.concentration.triggeredIngenuity,
-		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
-		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
-		}
-	
-	for _, bonusStat in pairs(craftOutput.bonusStats) do
-		map[bonusStat.bonusStatName .. " Value"] = bonusStat.bonusStatValue
-		map[bonusStat.bonusStatName .. " Percent"] = bonusStat.ratingPct
-		map[bonusStat.bonusStatName .. " Bonus"] = bonusStat.extraValue
-	end
-	
-	local allReagents = GUTIL:Concat({
-		craftOutput.reagents,
-		craftOutput.optionalReagents,
-		})
-
-	for _, reagent in pairs(allReagents) do
-		if reagent.quantity > 0 then
-			local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-			local title = reagent.itemName .. qualityTitle
-			map[title .. " ID"] = reagent.itemID
-			map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
-			map[title .. " Consumed Quantity"] = reagent.quantity
-			map[title .. " Returned Quantity"] = reagent.quantityReturned
-			map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
-			map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
-		end
-	end
-	
-	return map
 end
 

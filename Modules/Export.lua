@@ -121,6 +121,11 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
 	
 	
+	
+	
+	
+	
+	
 	CSDebug:StartProfiling("MAKE DATA")
 	local csvTable = {}
 	local function addLine(tbl)
@@ -138,8 +143,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	--Data
 	--Headers
 	addLine(columnKeys)
-	
-	local extractors = CraftLogger.Export:GetExtractors(columns)
 	local cachedProfessionStats = {}
 	local cachedItemStats = {}
 	for i = 1, numCraftOutputs do
@@ -173,7 +176,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
             optionalReagentMap[reagent.itemName .. qualityTitle] = reagent
         end
 		co.optionalReagentMap = optionalReagentMap
-		
 		--Prep
 		if not cachedProfessionStats[co.recipeID] then
 			cachedProfessionStats[co.recipeID] = C_TradeSkillUI.GetProfessionInfoByRecipeID(co.recipeID)
@@ -237,10 +239,17 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		
 		
 		local row = {}
+		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
+		for j = 1, numColumns do 
+			local value = craftOutputMap[columnKeys[j]]
+			row[j] = value == nil and "" or tostring(value)
+		end
+		--[[
 		for j = 1, #extractors do
 			local value = extractors[j](co, co.bonusMap, co.reagentMap, co.optionalReagentMap)
 			row[j] = value == nil and "" or tostring(value)
 		end
+		]]
 		addLine(row)
 	end
 	
@@ -257,7 +266,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	return csv
 end
 
---[[
+
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 
 	local map = {
@@ -295,13 +304,13 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
-	
+
 	for _, bonusStat in pairs(craftOutput.bonusStats) do
 		map[bonusStat.bonusStatName .. " Value"] = bonusStat.bonusStatValue
 		map[bonusStat.bonusStatName .. " Percent"] = bonusStat.ratingPct
 		map[bonusStat.bonusStatName .. " Bonus"] = bonusStat.extraValue
 	end
-	
+
 	local allReagents = GUTIL:Concat({
 		craftOutput.reagents,
 		craftOutput.optionalReagents,
@@ -322,8 +331,9 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 	
 	return map
 end
-]]
 
+
+--[[
 function CraftLogger.Export:GetExtractors(columns)
 	local extractors = {}
 	
@@ -440,3 +450,4 @@ function CraftLogger.Export:GetExtractors(columns)
 	
 	return extractors
 end
+]]

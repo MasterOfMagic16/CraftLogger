@@ -285,6 +285,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		CSDebug:StartProfiling("build")
 		clear(row)
 		for j = 1, #columns do 
+			local craftOutputMap = craftOutputMap
 			--640
 			--CSDebug:StartProfiling("Column Find")
 			local column = columns[j]

@@ -17,8 +17,6 @@ function CLExport()
 	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
-
-
 function CraftLogger.Export:GetDBCraftOutputs()
 	local craftOutputs = GUTIL:Map(CraftLoggerDB, 
 		function(co) 
@@ -28,6 +26,80 @@ function CraftLogger.Export:GetDBCraftOutputs()
 end
 
 function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
+
+	--Prep Data
+	local cachedProfessionInfo = {}
+	local cachedItemStats = {}
+	for i = 1, #craftOutputs do
+		local co = craftOutputs[i]
+
+		cachedProfessionInfo[co.recipeID] = cachedProfessionInfo[co.recipeID] or C_TradeSkillUI.GetProfessionInfoByRecipeID(co.recipeID)
+		local professionInfo = cachedProfessionInfo[co.recipeID]
+		co.profession = professionInfo.parentProfessionName
+		co.expansionName = professionInfo.expansionName
+		co.isOldWorldRecipe = co.expansionID <= 8
+		
+		local itemStats = cachedItemStats[co.item.itemID]
+		if not itemStats then
+			local isGear = C_Item.GetItemInventoryTypeByID(co.item.itemID) ~= 0
+			local bindType = select(14, C_Item.GetItemInfo(co.item.itemID))
+			local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
+								bindType == Enum.ItemBind.Quest or
+								bindType == Enum.ItemBind.ToWoWAccount or
+								bindType == Enum.ItemBind.ToBnetAccount
+			itemStats = {isGear = isGear, isSoulbound = isSoulbound}
+			cachedItemStats[co.item.itemID] = itemStats
+		end
+		co.isGear = itemStats.isGear
+		co.isSoulbound = itemStats.isSoulbound
+		
+		--Non-Cache
+		co.item.normalQuantity = co.item.quantity - (co.item.extraQuantity or 0)
+		
+		local bonusStats = co.bonusStats
+
+		if bonusStats["multicraft"] then
+			if co.item.extraQuantity then
+				co.item.triggeredMulticraft = true
+				co.item.multicraftFactor = co.item.extraQuantity / co.item.normalQuantity
+			else
+				co.item.triggeredMulticraft = false
+				co.item.multicraftFactor = nil
+			end
+		end
+
+		if bonusStats["resourcefulness"] then
+			local typesUsed = 0
+			local typesReturned = 0
+			local reagents = co.reagents
+
+			for j = 1, #reagents do
+				local reagent = reagents[j]
+				typesUsed = typesUsed + 1
+
+				if reagent.quantityReturned then
+					typesReturned = typesReturned + 1
+					reagent.triggeredResourcefulness = true
+					reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
+				else
+					reagent.triggeredResourcefulness = false
+					reagent.resourcefulnessFactor = nil
+				end
+			end
+			co.typesUsed = typesUsed
+			co.typesReturned = typesReturned
+		end
+
+		if bonusStats["ingenuity"] then
+			if co.concentration.concentrating and co.concentration.triggeredIngenuity then
+				co.concentration.ingenuityRefund = ceil(co.concentration.concentrationSpent / 2)
+			else
+				co.concentration.ingenuityRefund = nil
+			end
+		end
+	end
+	
+	
 	--Get Columns
 	
 	--Prep Variable Columns
@@ -99,80 +171,10 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	end
 	
 	--Generate CSV
-	
 	local csvTable = {table.concat(columns, ",")}
 	local row = {}
-	
-	local cachedProfessionInfo = {}
-	local cachedItemStats = {}
 	for i = 1, #craftOutputs do
 		local co = craftOutputs[i]
-
-		cachedProfessionInfo[co.recipeID] = cachedProfessionInfo[co.recipeID] or C_TradeSkillUI.GetProfessionInfoByRecipeID(co.recipeID)
-		local professionInfo = cachedProfessionInfo[co.recipeID]
-		co.profession = professionInfo.parentProfessionName
-		co.expansionName = professionInfo.expansionName
-		co.isOldWorldRecipe = co.expansionID <= 8
-		
-		local itemStats = cachedItemStats[co.item.itemID]
-		if not itemStats then
-			local isGear = C_Item.GetItemInventoryTypeByID(co.item.itemID) ~= 0
-			local bindType = select(14, C_Item.GetItemInfo(co.item.itemID))
-			local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
-								bindType == Enum.ItemBind.Quest or
-								bindType == Enum.ItemBind.ToWoWAccount or
-								bindType == Enum.ItemBind.ToBnetAccount
-			itemStats = {isGear = isGear, isSoulbound = isSoulbound}
-			cachedItemStats[co.item.itemID] = itemStats
-		end
-		co.isGear = itemStats.isGear
-		co.isSoulbound = itemStats.isSoulbound
-		
-		--Non-Cache
-		co.item.normalQuantity = co.item.quantity - (co.item.extraQuantity or 0)
-		
-		local bonusStats = co.bonusStats
-
-		if bonusStats["multicraft"] then
-			if co.item.extraQuantity then
-				co.item.triggeredMulticraft = true
-				co.item.multicraftFactor = co.item.extraQuantity / co.item.normalQuantity
-			else
-				co.item.triggeredMulticraft = false
-				co.item.multicraftFactor = nil
-			end
-		end
-
-		if bonusStats["resourcefulness"] then
-			local typesUsed = 0
-			local typesReturned = 0
-			local reagents = co.reagents
-
-			for j = 1, #reagents do
-				local reagent = reagents[j]
-				typesUsed = typesUsed + 1
-
-				if reagent.quantityReturned then
-					typesReturned = typesReturned + 1
-					reagent.triggeredResourcefulness = true
-					reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
-				else
-					reagent.triggeredResourcefulness = false
-					reagent.resourcefulnessFactor = nil
-				end
-			end
-			co.typesUsed = typesUsed
-			co.typesReturned = typesReturned
-		end
-
-		if bonusStats["ingenuity"] then
-			if co.concentration.concentrating and co.concentration.triggeredIngenuity then
-				co.concentration.ingenuityRefund = ceil(co.concentration.concentrationSpent / 2)
-			else
-				co.concentration.ingenuityRefund = nil
-			end
-		end
-		
 		local map = CraftLogger.Export:PrepareCraftOutputMap(co)
 		
 		for j = 1, #columns do 
@@ -180,7 +182,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			row[j] = value ~= nil and tostring(value) or ""
 		end
 		
-		csvTable[i + 1] = table.concat(row, ",")
+		table.insert(csvTable, table.concat(row, ","))
 	end
 
 	local csv = table.concat(csvTable, "\n")
@@ -189,7 +191,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 end
 
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
-	
 	local map = {
 		["Date"] = craftOutput.date,
 		["Game Version"] = craftOutput.gameVersion,
@@ -225,7 +226,6 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
-		
 		
 	for i = 1, #craftOutput.reagents do
 		local reagent = craftOutput.reagents[i]

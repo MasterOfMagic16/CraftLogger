@@ -50,8 +50,7 @@ function CLExport()
 	for i = 1, multiplier do
 		used = GUTIL:Concat({used, craftOutputs})
 	end
-	
-	
+
 	CSDebug:StartProfiling("GET EXPORT TEXT")
 	local text = CraftLogger.Export:GetCraftOutputTableCSV(used)
 	CSDebug:StopProfiling("GET EXPORT TEXT")
@@ -73,11 +72,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	local numCraftOutputs = #craftOutputs
 	local colIndex = 0
 	local concat = table.concat
-	
-	
-	
 	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
-	local numCraftOutputs = #craftOutputs
 	
 	--Get Columns
 	CSDebug:StartProfiling("GET COLUMNS")
@@ -174,6 +169,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
 	--Generate CSV
 	
+	--Speed
+	local numColumns = #columns
 	
 	
 	
@@ -262,6 +259,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		end
 		
 		local bonusStats = co.bonusStats
+    
 		if bonusStats["multicraft"] then
 			if item.extraQuantity then
 				item.triggeredMulticraft = true
@@ -314,10 +312,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			local value = craftOutputMap[columns[j]]
 			row[j] = value ~= nil and str(value) or ""
 		end
-		
-		
-		
-		
+
 		csvTable[i + 1] = concat(row, ",") -- optimized
 	end
 	CSDebug:StopProfiling("MAKE DATA")

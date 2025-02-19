@@ -30,7 +30,7 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 			end
 			craftOutput.bonusStats = bonusStats
 		end
-		--VersionReshapes["0.1.3"] = true
+		VersionReshapes["0.1.3"] = true
 	end
 end
 

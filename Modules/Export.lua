@@ -13,31 +13,37 @@ function CLTest()
 	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
 	
 	CSDebug:StartProfiling("Test 1")
-	local function tblfind(tbl, func)
-		for i = 1, #tbl do
-			if func(tbl[i]) then
-				return true
-			end
+	for j = 1, 500 do
+		local numCraftOutputs = #craftOutputs
+		local maxReagentTypes = 0
+		local maxOptionalReagentTypes = 0
+		for i = 1, numCraftOutputs do
+			local co = craftOutputs[i]
+			
+			maxOptionalReagentTypes = max(maxOptionalReagentTypes, #co.optionalReagents)
+			
+			maxReagentTypes = max(maxReagentTypes, #co.reagents)
 		end
-		return false
-	end
-	for i = 1, #craftOutputs do
-
 	end
 	CSDebug:StopProfiling("Test 1")
 	
 	
 	CSDebug:StartProfiling("Test 2")
-	local function tblfind(tbl, func)
-		for i = 1, #tbl do
-			if func(tbl[i]) then
-				return true
-			end
+	for j = 1, 500 do
+		local numCraftOutputs = #craftOutputs
+		local maxReagentTypes = 0
+		local maxOptionalReagentTypes = 0
+		for i = 1, numCraftOutputs do
+			local co = craftOutputs[i]
+			
+			local optionalReagents = co.optionalReagents
+			local optionalReagentTypes = #optionalReagents
+			maxOptionalReagentTypes = max(maxOptionalReagentTypes, optionalReagentTypes)
+			
+			local reagents = co.reagents
+			local ReagentTypes = #reagents
+			maxReagentTypes = max(maxReagentTypes, ReagentTypes)
 		end
-		return false
-	end
-	for i = 1, #craftOutputs do
-
 	end
 	CSDebug:StopProfiling("Test 2")
 end
@@ -73,25 +79,24 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	local colIndex = 0
 	local concat = table.concat
 	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
+	local maximum = max
+	local str = tostring
+	local getProfessionInfo = C_TradeSkillUI.GetProfessionInfoByRecipeID
+	local getItemInfo = C_Item.GetItemInfo
+	local getItemInventoryType = C_Item.GetItemInventoryTypeByID
+	local ceiling = ceil
 	
 	--Get Columns
 	CSDebug:StartProfiling("GET COLUMNS")
 	
 	--Prep Variable Columns
-	--local maxItemTypes = 0
 	local maxReagentTypes = 0
 	local maxOptionalReagentTypes = 0
 	for i = 1, numCraftOutputs do
 		local co = craftOutputs[i]
 		
-		--local itemTypes = #co.items
-		--maxItemTypes = max(maxItemTypes, itemTypes)
-		
-		local optionalReagentTypes = #co.optionalReagents
-		maxOptionalReagentTypes = max(maxOptionalReagentTypes, optionalReagentTypes)
-		
-		local ReagentTypes = #co.reagents
-		maxReagentTypes = max(maxReagentTypes, ReagentTypes)
+		maxOptionalReagentTypes = maximum(maxOptionalReagentTypes, #co.optionalReagents)
+		maxReagentTypes = maximum(maxReagentTypes, #co.reagents)
 	end
 	
 	--Set Columns & Order
@@ -127,146 +132,122 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		"Resourcefulness-Eligible Reagent Types Returned",
 		}
 	
-	local bonusStatNames = {"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}
-	for _, bonusStatName in pairs(bonusStatNames) do
-		insert(columns, bonusStatName .. " Value")
-		insert(columns, bonusStatName .. " Percent")
-		insert(columns, bonusStatName .. " Bonus")
-	end
+	local numColumns = #columns
 	
-	--[[
-	for i = 1, maxItemTypes do
-		local title = "Item " .. i
-		insert(columns, title .. " Name")
-		insert(columns, title .. " Quality")
-		insert(columns, title .. " Provided By Customer")
-		insert(columns, title .. " Consumed Quantity")
+	for _, bonusStatName in ipairs({"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}) do
+		numColumns = numColumns + 1
+		columns[numColumns] = bonusStatName .. " Value"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = bonusStatName .. " Percent"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = bonusStatName .. " Bonus"
 	end
-	]]
 	
 	for i = 1, maxOptionalReagentTypes do
 		local title = "Optional Reagent " .. i
-		insert(columns, title .. " Name")
-		insert(columns, title .. " Quality")
-		insert(columns, title .. " Provided By Customer")
-		insert(columns, title .. " Consumed Quantity")
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Name"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Quality"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Provided By Customer"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Consumed Quantity"
 	end
 	
 	for i = 1, maxReagentTypes do
 		local title = "Required Reagent " .. i
-		insert(columns, title .. " Name")
-		insert(columns, title .. " Quality")
-		insert(columns, title .. " Provided By Customer")
-		insert(columns, title .. " Consumed Quantity")
-		insert(columns, title .. " Returned Quantity")
-		insert(columns, title .. " Triggered Resourcefulness")
-		insert(columns, title .. " Resourcefulness Factor")
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Name"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Quality"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Provided By Customer"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Consumed Quantity"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Returned Quantity"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Triggered Resourcefulness"
+		
+		numColumns = numColumns + 1
+		columns[numColumns] = title .. " Resourcefulness Factor"
 	end
 	CSDebug:StopProfiling("GET COLUMNS")
 	
-	--Speed
-	local numColumns = #columns
-	
 	--Generate CSV
 	
-	--Speed
-	local numColumns = #columns
-	
-	
-	
 	CSDebug:StartProfiling("MAKE DATA")
-	local csvTable = {}
 	
-	--Headers
-	csvTable[1] = concat(columns, ",")
-
+	local csvTable = {concat(columns, ",")}
+	local row = {}
+	local map = {}
+	
 	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
-	local function compFuncID(item1, item2) return item1.itemID < item2.itemID end
-	local sort = table.sort
-	
-	local other = 0
-	local multicraft = 0
-	local resourcefulness = 0
-	local ingenuity = 0
-	local maptime = 0
-	local build = 0
-	local columnFind = 0
-	local coFind = 0
-	local valueFix = 0
-	
-	local function clear(tbl)
-		for i = 1, #tbl do
-			tbl[i] = nil
-		end
-	end
-	
-	local str = tostring
-	
-	local row = {}
-	
+
 	for i = 1, numCraftOutputs do
 		local co = craftOutputs[i]
 		local item = co.item
+		local itemID = item.itemID
 		local concentration = co.concentration
-
-		--Set Stats
-		
 		local recipeID = co.recipeID
 		
-		local professionInfo 
-		if cachedProfessionInfo[recipeID] then
-			professionInfo = cachedProfessionInfo[recipeID]
-		else
-			professionInfo = C_TradeSkillUI.GetProfessionInfoByRecipeID(recipeID)
-			cachedProfessionInfo[recipeID] = professionInfo
-		end
+		cachedProfessionInfo[recipeID] = cachedProfessionInfo[recipeID] or getProfessionInfo(recipeID)
+		local professionInfo = cachedProfessionInfo[recipeID]
 		co.profession = professionInfo.parentProfessionName
 		co.expansionName = professionInfo.expansionName
-		
 		co.isOldWorldRecipe = co.expansionID <= 8
 		
-		local itemID = item.itemID
-		if cachedItemStats[itemID] then
-			co.isGear = cachedItemStats[itemID].isGear
-			co.isSoulbound = cachedItemStats[itemID].isSoulbound
-		else
-			cachedItemStats[itemID] = {}
-			
-			local isGear = C_Item.GetItemInventoryTypeByID(itemID) ~= 0
-			co.isGear = isGear
-			cachedItemStats[itemID].isGear = isGear
-			
-			local bindType = select(14, C_Item.GetItemInfo(item.itemID))
+		local itemStats = cachedItemStats[itemID]
+		if not itemStats then
+			local isGear = getItemInventoryType(itemID) ~= 0
+			local bindType = select(14, getItemInfo(item.itemID))
+		
+		
+		
 			local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
 								bindType == Enum.ItemBind.Quest or
 								bindType == Enum.ItemBind.ToWoWAccount or
 								bindType == Enum.ItemBind.ToBnetAccount
-			co.isSoulbound = isSoulbound
-			cachedItemStats[itemID].isSoulbound = isSoulbound
+		
+		
+		
+		
+		
+			itemStats = {isGear = isGear, isSoulbound = isSoulbound}
+			cachedItemStats[itemID] = itemStats
 		end
-
+		co.isGear = itemStats.isGear
+		co.isSoulbound = itemStats.isSoulbound
+		
 		--Non-Cache
-		item.normalQuantity = item.quantity - (item.extraQuantity or 0)
+		local quantity = item.quantity 
+		local extraQuantity = item.extraQuantity
+		local normalQuantity = quantity - (extraQuantity or 0)
 		
-		local function tblfind(tbl, func)
-			for i = 1, #tbl do
-				if func(tbl[i]) then
-					return true
-				end
-			end
-			return false
-		end
-		
+		item.normalQuantity = normalQuantity
+
 		local bonusStats = co.bonusStats
-    
+		
 		if bonusStats["multicraft"] then
-			if item.extraQuantity then
+			if extraQuantity then
 				item.triggeredMulticraft = true
-				item.multicraftFactor = item.extraQuantity / item.normalQuantity
+				item.multicraftFactor = extraQuantity / normalQuantity
 			else
 				item.triggeredMulticraft = false
-				item.multicraftFactor = nil
 			end
 		end
 		
@@ -274,49 +255,107 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			local typesUsed = 0
 			local typesReturned = 0
 			local reagents = co.reagents
-			
+		
 			for j = 1, #reagents do
 				local reagent = reagents[j]
 				typesUsed = typesUsed + 1
 				
-				if reagent.quantityReturned then
+				local quantityReturned = reagent.quantityReturned
+				if quantityReturned then
 					typesReturned = typesReturned + 1
 					reagent.triggeredResourcefulness = true
-					reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
+					reagent.resourcefulnessFactor = quantityReturned / reagent.quantity
 				else
 					reagent.triggeredResourcefulness = false
-					reagent.resourcefulnessFactor = nil
 				end
 			end
 			co.typesUsed = typesUsed
 			co.typesReturned = typesReturned
 		end
-
+		
 		if bonusStats["ingenuity"] then
-			if concentration.concentrating and concentration.triggeredIngenuity then
-				concentration.ingenuityRefund = math.ceil(concentration.concentrationSpent / 2)
-			else
-				concentration.ingenuityRefund = nil
-			end
+			concentration.ingenuityRefund = (concentration.concentrating and concentration.triggeredIngenuity and ceiling(concentration.concentrationSpent / 2)) or nil
 		end
 		
-		--Get Overall Map
-		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
-
-
-
-
-
-		clear(row)
+		
+		
+		
+		map["Date"] = co.date
+		map["Game Version"] = co.gameVersion
+		map["CraftSim Version"] = co.craftSimVersion
+		map["CraftLogger Version"] = co.craftLoggerVersion
+		map["Crafter UID"] = co.crafterUID
+		map["Work Order"] = co.isWorkOrder
+		map["Recraft"] = co.isRecraft
+		map["Gear"] = co.isGear
+		map["Item Level"] = co.itemLevel
+		map["Soulbound"] = co.isSoulbound
+		map["Old World Recipe"] = co.isOldWorldRecipe
+		map["Expansion"] = co.expansionName
+		map["Profession"] = co.profession
+		map["Category ID"] = co.categoryID
+		map["Category Name"] = co.categoryName
+		map["Recipe ID"] = co.recipeID
+		map["Recipe Name"] = co.recipeName
+		map["Enchanting Target ID"] = co.enchantTargetItemID
+		map["Enchanting Target Name"] = co.enchantTargetItemName
+		map["Item ID"] = co.item.itemID
+		map["Item Name"] = co.item.itemName
+		map["Item Quality"] = co.item.quality
+		map["Normal Quantity"] = co.item.normalQuantity
+		map["Produced Quantity"] = co.item.quantity
+		map["Extra Quantity"] = co.item.extraQuantity
+		map["Triggered Multicraft"] = co.item.triggeredMulticraft
+		map["Multicraft Factor"] = co.item.multicraftFactor
+		map["Concentrating"] = co.concentration.concentrating
+		map["Concentration Spent"] = co.concentration.concentrationSpent
+		map["Concentration Refunded"] = co.concentration.ingenuityRefund
+		map["Triggered Ingenuity"] = co.concentration.triggeredIngenuity
+		map["Resourcefulness-Eligible Reagent Types Used"] = co.typesUsed
+		map["Resourcefulness-Eligible Reagent Types Returned"] = co.typesReturned
+		
+		for i = 1, #co.reagents do
+			local reagent = co.reagents[i]
+			local title = "Required Reagent " .. i
+			map[title .. " Name"] = reagent.itemName
+			map[title .. " Quality"] = reagent.quality
+			map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+			map[title .. " Consumed Quantity"] = reagent.quantity
+			map[title .. " Returned Quantity"] = reagent.quantityReturned
+			map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
+			map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
+		end
+		
+		for i = 1, #co.optionalReagents do
+			local reagent = co.optionalReagents[i]
+			local title = "Optional Reagent " .. i
+			map[title .. " Name"] = reagent.itemName
+			map[title .. " Quality"] = reagent.quality
+			map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+			map[title .. " Consumed Quantity"] = reagent.quantity
+		end
+		
+		for bonusStatName, bonusStat in pairs(co.bonusStats) do
+			map[bonusStatName .. " Value"] = bonusStat.bonusStatValue
+			map[bonusStatName .. " Percent"] = bonusStat.ratingPct
+			map[bonusStatName .. " Bonus"] = bonusStat.extraValue
+		end
+		
 		for j = 1, numColumns do 
-			local value = craftOutputMap[columns[j]]
+			local value = map[columns[j]]
 			row[j] = value ~= nil and str(value) or ""
 		end
-
-		csvTable[i + 1] = concat(row, ",") -- optimized
+		
+		
+		
+		
+		
+		
+		
+		csvTable[i + 1] = concat(row, ",")
 	end
 	CSDebug:StopProfiling("MAKE DATA")
-
+	
 	CSDebug:StartProfiling("TABLE COMBINE")
 	local csv = concat(csvTable, "\n")
 	CSDebug:StopProfiling("TABLE COMBINE")

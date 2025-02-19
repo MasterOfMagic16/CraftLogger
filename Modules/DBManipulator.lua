@@ -18,22 +18,6 @@ function CraftLogger.DBManipulator:PLAYER_LOGIN()
 	CraftLogger.DBManipulator.SessionBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
 end
 
-function CraftLogger.DBManipulator:ReshapeByVersion()
-	if not VersionReshapes["0.1.3"] then
-		for _, craftOutput in pairs(CraftLoggerDB) do
-			local bonusStats = {}
-			for key, bonusStat in pairs(craftOutput.bonusStats) do
-				if bonusStat.bonusStatName then
-					bonusStats[bonusStat.bonusStatName] = bonusStat
-					bonusStats[bonusStat.bonusStatName].bonusStatName = nil
-				end
-			end
-			craftOutput.bonusStats = bonusStats
-		end
-		VersionReshapes["0.1.3"] = true
-	end
-end
-
 --Globals
 function CLRestoreSession()
 	systemPrint("CraftLogger: Restoring Session Backup...")
@@ -275,4 +259,21 @@ function CraftLogger.DBManipulator:GetDBCraftOutputTable()
 		return CraftLogger.CraftOutput(co)
 		end)
 	return CraftLogger.CraftOutputTable(craftOutputs)
+end
+
+
+function CraftLogger.DBManipulator:ReshapeByVersion()
+	if not VersionReshapes["0.2.0"] then
+		for _, craftOutput in pairs(CraftLoggerDB) do
+			local bonusStats = {}
+			for key, bonusStat in pairs(craftOutput.bonusStats) do
+				if bonusStat.bonusStatName then
+					bonusStats[bonusStat.bonusStatName] = bonusStat
+					bonusStats[bonusStat.bonusStatName].bonusStatName = nil
+				end
+			end
+			craftOutput.bonusStats = bonusStats
+		end
+		VersionReshapes["0.2.0"] = true
+	end
 end

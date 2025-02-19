@@ -4,7 +4,7 @@
 ## Title: CraftLogger
 ## Notes: Logs Craft Results for Data Analysis
 ## Author: MasterOfMagic
-## Version: 0.1.2
+## Version: 0.2.0
 ## X-Curse-Project-ID:
 ## X-Wago-ID:
 ## X-WoWI-ID:

@@ -28,37 +28,30 @@ function CraftLogger.Export:GetDBCraftOutputs()
 end
 
 function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
-	local insert = table.insert
+	
+	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
 	local concat = table.concat
-		
-	--Prep Variable Columns
+	local numCraftOutputs = #craftOutputs
+	
+	--Get Columns
 	CSDebug:StartProfiling("GET COLUMNS")
-	local optionalReagentsList, reagentsList = {}, {}
-	local optionalReagentsSeen, reagentsSeen = {}, {}
 	
-	for _, craftOutput in ipairs(craftOutputs) do
-		for _, reagent in pairs(craftOutput.optionalReagents) do
-			local key = reagent.itemID
-			if not optionalReagentsSeen[key] then 
-				optionalReagentsSeen[key] = true
-				optionalReagentsList[#optionalReagentsList + 1] = reagent
-			end
-		end
+	--Prep Variable Columns
+	--local maxItemTypes = 0
+	local maxReagentTypes = 0
+	local maxOptionalReagentTypes = 0
+	for i = 1, numCraftOutputs do
+		local co = craftOutputs[i]
 		
-		for _, reagent in pairs(craftOutput.reagents) do
-			local key = reagent.itemID
-			if not reagentsSeen[key] then 
-				reagentsSeen[key] = true
-				reagentsList[#reagentsList + 1] = reagent
-			end
-		end
+		--local itemTypes = #co.items
+		--maxItemTypes = max(maxItemTypes, itemTypes)
+		
+		local optionalReagentTypes = #co.optionalReagents
+		maxOptionalReagentTypes = max(maxOptionalReagentTypes, optionalReagentTypes)
+		
+		local ReagentTypes = #co.reagents
+		maxReagentTypes = max(maxReagentTypes, ReagentTypes)
 	end
-	
-	local function compFuncReagent(reagent1,reagent2) return reagent1.itemID < reagent2.itemID end
-	
-	table.sort(optionalReagentsList, compFuncReagent)
-	table.sort(reagentsList, compFuncReagent)
-	local bonusStatNames = {"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}
 	
 	--Set Columns & Order
 	local columns = {
@@ -93,22 +86,35 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		"Resourcefulness-Eligible Reagent Types Returned",
 		}
 	
+	local bonusStatNames = {"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}
 	for _, bonusStatName in pairs(bonusStatNames) do
 		insert(columns, bonusStatName .. " Value")
 		insert(columns, bonusStatName .. " Percent")
 		insert(columns, bonusStatName .. " Bonus")
 	end
 	
-	for _, reagent in ipairs(optionalReagentsList) do
-		local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-		local title = reagent.itemName .. qualityTitle
+	--[[
+	for i = 1, maxItemTypes do
+		local title = "Item " .. i
+		insert(columns, title .. " Name")
+		insert(columns, title .. " Quality")
+		insert(columns, title .. " Provided By Customer")
+		insert(columns, title .. " Consumed Quantity")
+	end
+	]]
+	
+	for i = 1, maxOptionalReagentTypes do
+		local title = "Optional Reagent " .. i
+		insert(columns, title .. " Name")
+		insert(columns, title .. " Quality")
 		insert(columns, title .. " Provided By Customer")
 		insert(columns, title .. " Consumed Quantity")
 	end
 	
-	for _, reagent in ipairs(reagentsList) do
-		local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-		local title = reagent.itemName .. qualityTitle
+	for i = 1, maxReagentTypes do
+		local title = "Required Reagent " .. i
+		insert(columns, title .. " Name")
+		insert(columns, title .. " Quality")
 		insert(columns, title .. " Provided By Customer")
 		insert(columns, title .. " Consumed Quantity")
 		insert(columns, title .. " Returned Quantity")
@@ -116,84 +122,105 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		insert(columns, title .. " Resourcefulness Factor")
 	end
 	CSDebug:StopProfiling("GET COLUMNS")
+	
+	
 	--Generate CSV
 	
 	
 	
 	
-	
-	
-	
-	
-	
 	CSDebug:StartProfiling("MAKE DATA")
+	
 	local csvTable = {}
-	local function addLine(tbl)
-		csvTable[#csvTable + 1] = concat(tbl, ",")
+	
+	local function addRow(tbl)
+		insert(csvTable, concat(tbl, ","))
 	end
 	
 	local numColumns = #columns
-	local numCraftOutputs = #craftOutputs
 	
-	local columnKeys = {}
-	for i, column in ipairs(columns) do
-		columnKeys[i] = column
-	end
-	
-	--Data
 	--Headers
-	addLine(columnKeys)
-	local cachedProfessionStats = {}
+	addRow(columns)
+
+	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
 	for i = 1, numCraftOutputs do
 		local co = craftOutputs[i]
-		
 		local item = co.item
 		local concentration = co.concentration
 		
-		local bonusMap = {}
-        local bonusStats = co.bonusStats
-        for j = 1, #bonusStats do
-            local stat = bonusStats[j]
-            bonusMap[stat.bonusStatName] = stat
-        end
-		co.bonusMap = bonusMap
+		--Build Maps For Variable Columns
+		local function compFuncID(item1, item2) return item1.itemID < item2.itemID end
+
+		--[[
+		local items = co.items
+		table.sort(items, compFuncID)
+		local itemMap = {}
+		for j = 1, #items do
+			optionalReagentMap["Item " .. j] = items[j]
+		end
+		co.itemMap = itemMap
+		]]
 		
-		local reagentMap = {}
 		local reagents = co.reagents
-        for j = 1, #reagents do
-            local reagent = reagents[j]
-            local qualityTitle = (reagent.quality == nil) and "" or ("*" .. reagent.quality)
-            reagentMap[reagent.itemName .. qualityTitle] = reagent
-        end
+		table.sort(reagents, compFuncID)
+		local reagentMap = {}
+		for j = 1, #reagents do
+			reagentMap["Required Reagent " .. j] = reagents[j]
+		end
 		co.reagentMap = reagentMap
 		
-		local optionalReagentMap = {}
 		local optionalReagents = co.optionalReagents
-        for j = 1, #optionalReagents do
-            local reagent = optionalReagents[j]
-            local qualityTitle = (reagent.quality == nil) and "" or ("*" .. reagent.quality)
-            optionalReagentMap[reagent.itemName .. qualityTitle] = reagent
-        end
-		co.optionalReagentMap = optionalReagentMap
-		--Prep
-		if not cachedProfessionStats[co.recipeID] then
-			cachedProfessionStats[co.recipeID] = C_TradeSkillUI.GetProfessionInfoByRecipeID(co.recipeID)
+		table.sort(optionalReagents, compFuncID)
+		local optionalReagentMap = {}
+		for j = 1, #optionalReagents do
+			optionalReagentMap["Optional Reagent " .. j] = optionalReagents[j]
 		end
-		local professionInfo = cachedProfessionStats[co.recipeID]
+		co.optionalReagentMap = optionalReagentMap
+		
+		local bonusStats = co.bonusStats
+		local bonusMap = {}
+        for j = 1, #bonusStats do
+            bonusMap[bonusStats[j].bonusStatName] = bonusStats[j]
+        end
+		co.bonusMap = bonusMap
+
+		--Set Stats
+		local recipeID = co.recipeID
+		
+		local professionInfo 
+		if cachedProfessionInfo[recipeID] then
+			professionInfo = cachedProfessionInfo[recipeID]
+		else
+			professionInfo = C_TradeSkillUI.GetProfessionInfoByRecipeID(recipeID)
+			cachedProfessionInfo[recipeID] = professionInfo
+		end
 		co.profession = professionInfo.parentProfessionName
 		co.expansionName = professionInfo.expansionName
 		
 		co.isOldWorldRecipe = co.expansionID <= 8
 		
-		co.isGear = C_Item.GetItemInventoryTypeByID(item.itemID) ~= 0
-		local bindType = select(14, C_Item.GetItemInfo(item.itemID))
-		co.isSoulbound = 	bindType == Enum.ItemBind.OnAcquire or
-							bindType == Enum.ItemBind.Quest or
-							bindType == Enum.ItemBind.ToWoWAccount or
-							bindType == Enum.ItemBind.ToBnetAccount
-		
-		
+		local itemID = item.itemID
+		if cachedItemStats[itemID] then
+			co.isGear = cachedItemStats[itemID].isGear
+			co.isSoulbound = cachedItemStats[itemID].isSoulbound
+		else
+			cachedItemStats[itemID] = {}
+			
+			local isGear = C_Item.GetItemInventoryTypeByID(itemID) ~= 0
+			co.isGear = isGear
+			cachedItemStats[itemID].isGear = isGear
+			
+			local bindType = select(14, C_Item.GetItemInfo(item.itemID))
+			local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
+								bindType == Enum.ItemBind.Quest or
+								bindType == Enum.ItemBind.ToWoWAccount or
+								bindType == Enum.ItemBind.ToBnetAccount
+			co.isSoulbound = isSoulbound
+			cachedItemStats[itemID].isSoulbound = isSoulbound
+		end
+
+		--Non-Cache
 		item.normalQuantity = item.quantity - (item.extraQuantity or 0)
 		
 		if co.bonusMap["multicraft"] then
@@ -209,7 +236,10 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		if co.bonusMap["resourcefulness"] then
 			local typesUsed = 0
 			local typesReturned = 0
-			for _, reagent in pairs(co.reagents) do
+			local reagents = co.reagents
+			
+			for j = 1, #reagents do
+				local reagent = reagents[j]
 				typesUsed = typesUsed + 1
 				
 				if reagent.quantityReturned then
@@ -232,33 +262,21 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 				concentration.ingenuityRefund = nil
 			end
 		end
-		
-		
-		
-		
-		
-		
-		local row = {}
+
+		--Get Overall Map
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
+
+		--Build Data 
+		local row = {}
 		for j = 1, numColumns do 
-			local value = craftOutputMap[columnKeys[j]]
+			local value = craftOutputMap[columns[j]]
 			row[j] = value == nil and "" or tostring(value)
 		end
-		--[[
-		for j = 1, #extractors do
-			local value = extractors[j](co, co.bonusMap, co.reagentMap, co.optionalReagentMap)
-			row[j] = value == nil and "" or tostring(value)
-		end
-		]]
-		addLine(row)
+
+		addRow(row)
 	end
-	
 	CSDebug:StopProfiling("MAKE DATA")
-	
-	
-	
-	
-	
+
 	CSDebug:StartProfiling("TABLE COMBINE")
 	local csv = concat(csvTable, "\n")
 	CSDebug:StopProfiling("TABLE COMBINE")
@@ -266,9 +284,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	return csv
 end
 
-
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
-
 	local map = {
 		["Date"] = craftOutput.date,
 		["Game Version"] = craftOutput.gameVersion,
@@ -305,149 +321,31 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
 
-	for _, bonusStat in pairs(craftOutput.bonusStats) do
-		map[bonusStat.bonusStatName .. " Value"] = bonusStat.bonusStatValue
-		map[bonusStat.bonusStatName .. " Percent"] = bonusStat.ratingPct
-		map[bonusStat.bonusStatName .. " Bonus"] = bonusStat.extraValue
+	local bonusMap = craftOutput.bonusMap
+	for title, bonusStat in pairs(bonusMap) do
+		map[title .. " Value"] = bonusStat.bonusStatValue
+		map[title .. " Percent"] = bonusStat.ratingPct
+		map[title .. " Bonus"] = bonusStat.extraValue
 	end
 
-	local allReagents = GUTIL:Concat({
-		craftOutput.reagents,
-		craftOutput.optionalReagents,
-		})
+	local optionalReagentMap = craftOutput.optionalReagentMap
+	for title, reagent in pairs(optionalReagentMap) do
+		map[title .. " Name"] = reagent.itemName
+		map[title .. " Quality"] = reagent.quality
+		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+		map[title .. " Consumed Quantity"] = reagent.quantity
+	end
 
-	for _, reagent in pairs(allReagents) do
-		if reagent.quantity > 0 then
-			local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-			local title = reagent.itemName .. qualityTitle
-			map[title .. " ID"] = reagent.itemID
-			map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
-			map[title .. " Consumed Quantity"] = reagent.quantity
-			map[title .. " Returned Quantity"] = reagent.quantityReturned
-			map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
-			map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
-		end
+	local reagentMap = craftOutput.reagentMap
+	for title, reagent in pairs(reagentMap) do
+		map[title .. " Name"] = reagent.itemName
+		map[title .. " Quality"] = reagent.quality
+		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+		map[title .. " Consumed Quantity"] = reagent.quantity
+		map[title .. " Returned Quantity"] = reagent.quantityReturned
+		map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
+		map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
 	end
 	
 	return map
 end
-
-
---[[
-function CraftLogger.Export:GetExtractors(columns)
-	local extractors = {}
-	
-	local function createBonusExtractor(colName, suffix, field)
-		local bonusKey = colName:sub(1, -#suffix - 1)
-		return function(co, bonusMap, reagentMap, optionalReagentMap)
-			local stat = bonusMap[bonusKey]
-			return stat and stat[field]
-		end
-	end
-	
-	local function createReagentExtractor(colName, suffix, field)
-		local reagentKey = colName:sub(1, -#suffix - 1)
-		return function(co, bonusMap, reagentMap, optionalReagentMap)
-			local reagent = reagentMap[reagentKey] or optionalReagentMap[reagentKey]
-			return reagent and reagent[field]
-		end
-	end
-	
-	for _, colName in ipairs(columns) do
-		if colName == "Date" then
-			table.insert(extractors, function(co) return co.date end)
-		elseif colName == "Game Version" then
-			table.insert(extractors, function(co) return co.gameVersion end)
-		elseif colName == "CraftSim Version" then
-			table.insert(extractors, function(co) return co.craftSimVersion end)
-		elseif colName == "CraftLogger Version" then
-			table.insert(extractors, function(co) return co.craftLoggerVersion end)
-		elseif colName == "Crafter UID" then
-			table.insert(extractors, function(co) return co.crafterUID end)
-		elseif colName == "Work Order" then
-			table.insert(extractors, function(co) return co.isWorkOrder end)
-		elseif colName == "Recraft" then
-			table.insert(extractors, function(co) return co.isRecraft end)
-		elseif colName == "Gear" then
-			table.insert(extractors, function(co) return co.isGear end)
-		elseif colName == "Item Level" then
-			table.insert(extractors, function(co) return co.itemLevel end)
-		elseif colName == "Soulbound" then
-			table.insert(extractors, function(co) return co.isSoulbound end)
-		elseif colName == "Old World Recipe" then
-			table.insert(extractors, function(co) return co.isOldWorldRecipe end)
-		elseif colName == "Expansion" then
-			table.insert(extractors, function(co) return co.expansionName end)
-		elseif colName == "Profession" then
-			table.insert(extractors, function(co) return co.profession end)
-		elseif colName == "Category ID" then
-			table.insert(extractors, function(co) return co.categoryID end)
-		elseif colName == "Category Name" then
-			table.insert(extractors, function(co) return co.categoryName end)
-		elseif colName == "Recipe ID" then
-			table.insert(extractors, function(co) return co.recipeID end)
-		elseif colName == "Recipe Name" then
-			table.insert(extractors, function(co) return co.recipeName end)
-		elseif colName == "Enchanting Target ID" then
-			table.insert(extractors, function(co) return co.enchantTargetItemID end)
-		elseif colName == "Enchanting Target Name" then
-			table.insert(extractors, function(co) return co.enchantTargetItemName end)
-		elseif colName == "Item ID" then
-			table.insert(extractors, function(co) return co.item.itemID end)
-		elseif colName == "Item Name" then
-			table.insert(extractors, function(co) return co.item.itemName end)
-		elseif colName == "Item Quality" then
-			table.insert(extractors, function(co) return co.item.quality end)
-		elseif colName == "Normal Quantity" then
-			table.insert(extractors, function(co) return co.item.normalQuantity end)
-		elseif colName == "Produced Quantity" then
-			table.insert(extractors, function(co) return co.item.quantity end)
-		elseif colName == "Extra Quantity" then
-			table.insert(extractors, function(co) return co.item.extraQuantity end)
-		elseif colName == "Triggered Multicraft" then
-			table.insert(extractors, function(co) return co.item.triggeredMulticraft end)
-		elseif colName == "Multicraft Factor" then
-			table.insert(extractors, function(co) return co.item.multicraftFactor end)
-		elseif colName == "Concentrating" then
-			table.insert(extractors, function(co) return co.concentration.concentrating end)
-		elseif colName == "Concentration Spent" then
-			table.insert(extractors, function(co) return co.concentration.concentrationSpent end)
-		elseif colName == "Concentration Refunded" then
-			table.insert(extractors, function(co) return co.concentration.ingenuityRefund end)
-		elseif colName == "Triggered Ingenuity" then
-			table.insert(extractors, function(co) return co.concentration.triggeredIngenuity end)
-		elseif colName == "Resourcefulness-Eligible Reagent Types Used" then
-			table.insert(extractors, function(co) return co.typesUsed end)
-		elseif colName == "Resourcefulness-Eligible Reagent Types Returned" then
-			table.insert(extractors, function(co) return co.typesReturned end)
-		
-		elseif colName:find(" Value") then
-			table.insert(extractors, createBonusExtractor(colName, " Value", "bonusStatValue"))
-		elseif colName:find(" Percent") then
-			table.insert(extractors, createBonusExtractor(colName, " Percent", "ratingPct"))
-		elseif colName:find(" Bonus") then
-			table.insert(extractors, createBonusExtractor(colName, " Bonus", "extraValue"))
-	
-			
-		elseif colName:find(" ID") then
-			table.insert(extractors, createReagentExtractor(colName, " ID", "itemID"))
-		elseif colName:find(" Provided By Customer") then
-			table.insert(extractors, createReagentExtractor(colName, " Provided By Customer", "isOrderReagentIn"))
-		elseif colName:find(" Consumed Quantity") then
-			table.insert(extractors, createReagentExtractor(colName, " Consumed Quantity", "quantity"))
-		elseif colName:find(" Returned Quantity") then
-			table.insert(extractors, createReagentExtractor(colName, " Returned Quantity", "quantityReturned"))
-		elseif colName:find(" Triggered Resourcefulness") then
-			table.insert(extractors, createReagentExtractor(colName, " Triggered Resourcefulness", "triggeredResourcefulness"))
-		elseif colName:find(" Resourcefulness Factor") then
-			table.insert(extractors, createReagentExtractor(colName, " Resourcefulness Factor", "resourcefulnessFactor"))
-		
-		else
-			table.insert(extractors, function() return nil end)
-		end
-
-	end
-	
-	return extractors
-end
-]]

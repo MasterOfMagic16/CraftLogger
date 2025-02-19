@@ -9,11 +9,51 @@ function CraftLogger.Export:Init()
 	CSDebug = CraftSimAPI:GetCraftSim().DEBUG
 end
 
+function CLTest()
+	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
+	
+	CSDebug:StartProfiling("Test 1")
+	local function tblfind(tbl, func)
+		for i = 1, #tbl do
+			if func(tbl[i]) then
+				return true
+			end
+		end
+		return false
+	end
+	for i = 1, #craftOutputs do
+
+	end
+	CSDebug:StopProfiling("Test 1")
+	
+	
+	CSDebug:StartProfiling("Test 2")
+	local function tblfind(tbl, func)
+		for i = 1, #tbl do
+			if func(tbl[i]) then
+				return true
+			end
+		end
+		return false
+	end
+	for i = 1, #craftOutputs do
+
+	end
+	CSDebug:StopProfiling("Test 2")
+end
+
 function CLExport()
 	CSDebug:StartProfiling("OVERALL EXPORT")
 	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
+	local multiplier = 1
+	local used = {}
+	for i = 1, multiplier do
+		used = GUTIL:Concat({used, craftOutputs})
+	end
+	
+	
 	CSDebug:StartProfiling("GET EXPORT TEXT")
-	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
+	local text = CraftLogger.Export:GetCraftOutputTableCSV(used)
 	CSDebug:StopProfiling("GET EXPORT TEXT")
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 	CSDebug:StopProfiling("OVERALL EXPORT")
@@ -29,8 +69,14 @@ end
 
 function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
-	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
+	--Speed
+	local numCraftOutputs = #craftOutputs
+	local colIndex = 0
 	local concat = table.concat
+	
+	
+	
+	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
 	local numCraftOutputs = #craftOutputs
 	
 	--Get Columns
@@ -123,6 +169,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	end
 	CSDebug:StopProfiling("GET COLUMNS")
 	
+	--Speed
+	local numColumns = #columns
 	
 	--Generate CSV
 	
@@ -132,14 +180,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	CSDebug:StartProfiling("MAKE DATA")
 	local csvTable = {}
 	
-	local function addRow(tbl)
-		csvTable[#csvTable + 1] = concat(tbl, ",")
-	end
-	
-	local numColumns = #columns
-	
 	--Headers
-	addRow(columns)
+	csvTable[1] = concat(columns, ",")
 
 	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
@@ -163,10 +205,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	end
 	
 	local str = tostring
-	
-	local reagentMap = {}
-	local optionalReagentMap = {}
-	local bonusMap = {}
 	
 	local row = {}
 	
@@ -223,7 +261,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			return false
 		end
 		
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "multicraft" end) then
+		local bonusStats = co.bonusStats
+		if bonusStats["multicraft"] then
 			if item.extraQuantity then
 				item.triggeredMulticraft = true
 				item.multicraftFactor = item.extraQuantity / item.normalQuantity
@@ -233,7 +272,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			end
 		end
 		
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "resourcefulness" end) then
+		if bonusStats["resourcefulness"] then
 			local typesUsed = 0
 			local typesReturned = 0
 			local reagents = co.reagents
@@ -255,7 +294,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			co.typesReturned = typesReturned
 		end
 
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "ingenuity" end) then
+		if bonusStats["ingenuity"] then
 			if concentration.concentrating and concentration.triggeredIngenuity then
 				concentration.ingenuityRefund = math.ceil(concentration.concentrationSpent / 2)
 			else
@@ -266,13 +305,20 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		--Get Overall Map
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
 
+
+
+
+
 		clear(row)
-		for j = 1, #columns do 
+		for j = 1, numColumns do 
 			local value = craftOutputMap[columns[j]]
 			row[j] = value ~= nil and str(value) or ""
 		end
 		
-		addRow(row)
+		
+		
+		
+		csvTable[i + 1] = concat(row, ",") -- optimized
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 
@@ -343,12 +389,10 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		map[title .. " Consumed Quantity"] = reagent.quantity
 	end
 	
-	for i = 1, #craftOutput.bonusStats do
-		local bonusStat = craftOutput.bonusStats[i]
-		local title = bonusStat.bonusStatName
-		map[title .. " Value"] = bonusStat.bonusStatValue
-		map[title .. " Percent"] = bonusStat.ratingPct
-		map[title .. " Bonus"] = bonusStat.extraValue
+	for bonusStatName, bonusStat in pairs(craftOutput.bonusStats) do
+		map[bonusStatName .. " Value"] = bonusStat.bonusStatValue
+		map[bonusStatName .. " Percent"] = bonusStat.ratingPct
+		map[bonusStatName .. " Bonus"] = bonusStat.extraValue
 	end
 
 	return map

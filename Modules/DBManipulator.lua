@@ -5,6 +5,7 @@ local systemPrint = print
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.DBManipulator = GUTIL:CreateRegistreeForEvents({ "PLAYER_LOGIN" })
+VersionReshapes = VersionReshapes or {}
 
 local print
 function CraftLogger.DBManipulator:Init()
@@ -12,8 +13,25 @@ function CraftLogger.DBManipulator:Init()
 end
 
 function CraftLogger.DBManipulator:PLAYER_LOGIN()
+	CraftLogger.DBManipulator:ReshapeByVersion()
 	CraftLogger.DBManipulator.DBBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
 	CraftLogger.DBManipulator.SessionBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
+end
+
+function CraftLogger.DBManipulator:ReshapeByVersion()
+	if not VersionReshapes["0.1.3"] then
+		for _, craftOutput in pairs(CraftLoggerDB) do
+			local bonusStats = {}
+			for key, bonusStat in pairs(craftOutput.bonusStats) do
+				if bonusStat.bonusStatName then
+					bonusStats[bonusStat.bonusStatName] = bonusStat
+					bonusStats[bonusStat.bonusStatName].bonusStatName = nil
+				end
+			end
+			craftOutput.bonusStats = bonusStats
+		end
+		--VersionReshapes["0.1.3"] = true
+	end
 end
 
 --Globals

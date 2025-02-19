@@ -174,12 +174,11 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 				(name == "craftingspeed" and recipeData.supportsCraftingspeed) or
 				(name == "ingenuity" and recipeData.supportsIngenuity) then
 			
-			table.insert(self.bonusStats, {
-			bonusStatName = professionStat.name,
-			bonusStatValue = GUTIL:Round(professionStat.value),
-			ratingPct = professionStat:GetPercent(),
-			extraValue = professionStat.extraValues[1] or 0,
-			})
+			self.bonusStats[name] = {
+				bonusStatValue = GUTIL:Round(professionStat.value),
+				ratingPct = professionStat:GetPercent(),
+				extraValue = professionStat.extraValues[1] or 0,
+				}
 		end
 	end
 end
@@ -213,8 +212,8 @@ function CraftLogger.CraftOutput:Printing()
 	local triggeredIngenuityPrint = (self.concentration.triggeredIngenuity == nil and "N/A") or tostring(self.concentration.triggeredIngenuity)
 	systemPrint("Concentrating: " .. concentratingPrint .. ", Triggered Ingenuity: " .. triggeredIngenuityPrint)
 	
-	for _, bonusStat in pairs(self.bonusStats) do
-		systemPrint(bonusStat.bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
+	for bonusStatName, bonusStat in pairs(self.bonusStats) do
+		systemPrint(bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
 	end
 end
 
@@ -269,7 +268,7 @@ function CraftLogger.CraftOutput:SetMulticraftStats()
 	--Normal Quantity
 	self.item.normalQuantity = self.item.quantity - (self.item.extraQuantity or 0)
 	
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "multicraft" end) then
+	if not self.bonusStats["multicraft"] then
 		return
 	end
 	
@@ -292,7 +291,7 @@ end
 --This is because theorized average return is 0.3, to maintain this the game has invisible resourcefulness procs
 --Assume Optional Reagents Can't Proc Resourcefulness
 function CraftLogger.CraftOutput:SetResourcefulnessStats()
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "resourcefulness" end) then
+	if not self.bonusStats["resourcefulness"] then
 		return
 	end
 	
@@ -320,7 +319,7 @@ end
 
 
 function CraftLogger.CraftOutput:SetIngenuityStats()
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "ingenuity" end) then
+	if not self.bonusStats["ingenuity"] then
 		return
 	end
 	
@@ -352,7 +351,7 @@ function CraftLogger.CraftOutput:SetAllStats()
 	--Normal Quantity
 	self.item.normalQuantity = self.item.quantity - (self.item.extraQuantity or 0)
 	
-	if GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "multicraft" end) then
+	if self.bonusStats["multicraft"] then
 		--Triggered Multicraft
 		--Multicraft Factor
 		if self.item.extraQuantity then
@@ -364,7 +363,7 @@ function CraftLogger.CraftOutput:SetAllStats()
 		end
 	end
 	
-	if GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "resourcefulness" end) then
+	if self.bonusStats["resourcefulness"] then
 		local typesUsed = 0
 		local typesReturned = 0
 		for _, reagent in pairs(self.reagents) do
@@ -383,7 +382,7 @@ function CraftLogger.CraftOutput:SetAllStats()
 		self.typesReturned = typesReturned
 	end
 	
-	if GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "ingenuity" end) then
+	if self.bonusStats["ingenuity"] then
 		if self.concentration.concentrating and self.concentration.triggeredIngenuity then
 			self.concentration.ingenuityRefund = math.ceil(self.concentration.concentrationSpent / 2)
 		else

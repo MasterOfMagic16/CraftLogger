@@ -144,7 +144,15 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 
 	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
+	
+	
+	
+	local prepTime = 0
+	local pullTime = 0
+	
+	
 	for i = 1, numCraftOutputs do
+		CSDebug:StartProfiling("Prep Data")
 		local co = craftOutputs[i]
 		local item = co.item
 		local concentration = co.concentration
@@ -265,18 +273,24 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 
 		--Get Overall Map
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
+		prepTime = prepTime + CSDebug:StopProfiling("Prep Data")
 
+		CSDebug:StartProfiling("Pull Data")
 		--Build Data 
 		local row = {}
 		for j = 1, numColumns do 
 			local value = craftOutputMap[columns[j]]
 			row[j] = value == nil and "" or tostring(value)
 		end
-
+		pullTime = pullTime + CSDebug:StopProfiling("Pull Data")
+		
 		addRow(row)
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 
+	print(prepTime)
+	print(pullTime)
+	
 	CSDebug:StartProfiling("TABLE COMBINE")
 	local csv = concat(csvTable, "\n")
 	CSDebug:StopProfiling("TABLE COMBINE")

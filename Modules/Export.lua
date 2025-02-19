@@ -177,7 +177,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 
 		--Set Stats
 		
-		CSDebug:StartProfiling("other")
 		local recipeID = co.recipeID
 		
 		local professionInfo 
@@ -215,8 +214,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		--Non-Cache
 		item.normalQuantity = item.quantity - (item.extraQuantity or 0)
 		
-		other = other + CSDebug:StopProfiling("other")
-		
 		local function tblfind(tbl, func)
 			for i = 1, #tbl do
 				if func(tbl[i]) then
@@ -225,8 +222,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			end
 			return false
 		end
-		
-		CSDebug:StartProfiling("multicraft")
 		
 		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "multicraft" end) then
 			if item.extraQuantity then
@@ -237,10 +232,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 				item.multicraftFactor = nil
 			end
 		end
-		
-		multicraft = multicraft + CSDebug:StopProfiling("multicraft")
-		
-		CSDebug:StartProfiling("resourcefulness")
 		
 		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "resourcefulness" end) then
 			local typesUsed = 0
@@ -263,10 +254,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			co.typesUsed = typesUsed
 			co.typesReturned = typesReturned
 		end
-		
-		resourcefulness = resourcefulness + CSDebug:StopProfiling("resourcefulness")
-		
-		CSDebug:StartProfiling("ingenuity")
+
 		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "ingenuity" end) then
 			if concentration.concentrating and concentration.triggeredIngenuity then
 				concentration.ingenuityRefund = math.ceil(concentration.concentrationSpent / 2)
@@ -275,46 +263,18 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			end
 		end
 		
-		ingenuity = ingenuity + CSDebug:StopProfiling("ingenuity")
-
-		CSDebug:StartProfiling("map")
 		--Get Overall Map
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
-		maptime = maptime + CSDebug:StopProfiling("map")
-		--Build Data 
-		CSDebug:StartProfiling("build")
+
 		clear(row)
 		for j = 1, #columns do 
-			local craftOutputMap = craftOutputMap
-			--640
-			--CSDebug:StartProfiling("Column Find")
-			local column = columns[j]
-			--columnFind = columnFind + CSDebug:StopProfiling("Column Find")
-			--672
-			--CSDebug:StartProfiling("CO Find")
-			local value = craftOutputMap[column]
-			--coFind = coFind + CSDebug:StopProfiling("CO Find")
-			--1104
-			--CSDebug:StartProfiling("Value Fix")
+			local value = craftOutputMap[columns[j]]
 			row[j] = value ~= nil and str(value) or ""
-			--valueFix = valueFix + CSDebug:StopProfiling("Value Fix")
 		end
 		
 		addRow(row)
-		build = build + CSDebug:StopProfiling("build")
 	end
 	CSDebug:StopProfiling("MAKE DATA")
-
-	print(other)
-	print(multicraft)
-	print(resourcefulness)
-	print(ingenuity)
-	print(maptime)
-	print(build)
-	print(columnFind)
-	print(coFind)
-	print(valueFix)
-	print("Total" .. other + multicraft + resourcefulness + ingenuity + maptime + columnFind + coFind + build + valueFix)
 
 	CSDebug:StartProfiling("TABLE COMBINE")
 	local csv = concat(csvTable, "\n")

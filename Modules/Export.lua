@@ -12,8 +12,16 @@ end
 function CLExport()
 	CSDebug:StartProfiling("OVERALL EXPORT")
 	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
+	local multiplier = 1
+	local used = {}
+	for i = 1, multiplier do
+		used = GUTIL:Concat({used, craftOutputs})
+	end
+
+
 	CSDebug:StartProfiling("GET EXPORT TEXT")
 	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
+	local text = CraftLogger.Export:GetCraftOutputTableCSV(used)
 	CSDebug:StopProfiling("GET EXPORT TEXT")
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 	CSDebug:StopProfiling("OVERALL EXPORT")
@@ -29,9 +37,11 @@ end
 
 function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
-	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
-	local concat = table.concat
+	--Speed
 	local numCraftOutputs = #craftOutputs
+	local colIndex = 0
+	local concat = table.concat
+	local insert = function(tbl, value) tbl[#tbl + 1] = value return tbl end
 	
 	--Get Columns
 	CSDebug:StartProfiling("GET COLUMNS")
@@ -126,6 +136,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
 	--Generate CSV
 	
+	--Speed
+	local numColumns = #columns
 	
 	
 	
@@ -136,10 +148,8 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		csvTable[#csvTable + 1] = concat(tbl, ",")
 	end
 	
-	local numColumns = #columns
-	
 	--Headers
-	addRow(columns)
+	csvTable[1] = concat(columns, ",")
 
 	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
@@ -163,10 +173,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	end
 	
 	local str = tostring
-	
-	local reagentMap = {}
-	local optionalReagentMap = {}
-	local bonusMap = {}
 	
 	local row = {}
 	
@@ -223,7 +229,9 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			return false
 		end
 		
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "multicraft" end) then
+		local bonusStats = co.bonusStats
+		
+		if tblfind(bonusStats, function(stat) return stat.bonusStatName == "multicraft" end) then
 			if item.extraQuantity then
 				item.triggeredMulticraft = true
 				item.multicraftFactor = item.extraQuantity / item.normalQuantity
@@ -233,7 +241,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			end
 		end
 		
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "resourcefulness" end) then
+		if tblfind(bonusStats, function(stat) return stat.bonusStatName == "resourcefulness" end) then
 			local typesUsed = 0
 			local typesReturned = 0
 			local reagents = co.reagents
@@ -255,7 +263,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			co.typesReturned = typesReturned
 		end
 
-		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "ingenuity" end) then
+		if tblfind(bonusStats, function(stat) return stat.bonusStatName == "ingenuity" end) then
 			if concentration.concentrating and concentration.triggeredIngenuity then
 				concentration.ingenuityRefund = math.ceil(concentration.concentrationSpent / 2)
 			else
@@ -267,12 +275,12 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
 
 		clear(row)
-		for j = 1, #columns do 
+		for j = 1, numColumns do 
 			local value = craftOutputMap[columns[j]]
 			row[j] = value ~= nil and str(value) or ""
 		end
 		
-		addRow(row)
+		csvTable[i + 1] = concat(row, ",") -- optimized
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 

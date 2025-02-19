@@ -130,11 +130,10 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 	
 	
 	CSDebug:StartProfiling("MAKE DATA")
-	
 	local csvTable = {}
 	
 	local function addRow(tbl)
-		insert(csvTable, concat(tbl, ","))
+		csvTable[#csvTable + 1] = concat(tbl, ",")
 	end
 	
 	local numColumns = #columns
@@ -144,56 +143,41 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 
 	local cachedProfessionInfo = {}
 	local cachedItemStats = {}
+	local function compFuncID(item1, item2) return item1.itemID < item2.itemID end
+	local sort = table.sort
 	
+	local other = 0
+	local multicraft = 0
+	local resourcefulness = 0
+	local ingenuity = 0
+	local maptime = 0
+	local build = 0
+	local columnFind = 0
+	local coFind = 0
+	local valueFix = 0
 	
+	local function clear(tbl)
+		for i = 1, #tbl do
+			tbl[i] = nil
+		end
+	end
 	
-	local prepTime = 0
-	local pullTime = 0
+	local str = tostring
 	
+	local reagentMap = {}
+	local optionalReagentMap = {}
+	local bonusMap = {}
+	
+	local row = {}
 	
 	for i = 1, numCraftOutputs do
-		CSDebug:StartProfiling("Prep Data")
 		local co = craftOutputs[i]
 		local item = co.item
 		local concentration = co.concentration
-		
-		--Build Maps For Variable Columns
-		local function compFuncID(item1, item2) return item1.itemID < item2.itemID end
-
-		--[[
-		local items = co.items
-		table.sort(items, compFuncID)
-		local itemMap = {}
-		for j = 1, #items do
-			optionalReagentMap["Item " .. j] = items[j]
-		end
-		co.itemMap = itemMap
-		]]
-		
-		local reagents = co.reagents
-		table.sort(reagents, compFuncID)
-		local reagentMap = {}
-		for j = 1, #reagents do
-			reagentMap["Required Reagent " .. j] = reagents[j]
-		end
-		co.reagentMap = reagentMap
-		
-		local optionalReagents = co.optionalReagents
-		table.sort(optionalReagents, compFuncID)
-		local optionalReagentMap = {}
-		for j = 1, #optionalReagents do
-			optionalReagentMap["Optional Reagent " .. j] = optionalReagents[j]
-		end
-		co.optionalReagentMap = optionalReagentMap
-		
-		local bonusStats = co.bonusStats
-		local bonusMap = {}
-        for j = 1, #bonusStats do
-            bonusMap[bonusStats[j].bonusStatName] = bonusStats[j]
-        end
-		co.bonusMap = bonusMap
 
 		--Set Stats
+		
+		CSDebug:StartProfiling("other")
 		local recipeID = co.recipeID
 		
 		local professionInfo 
@@ -231,7 +215,20 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		--Non-Cache
 		item.normalQuantity = item.quantity - (item.extraQuantity or 0)
 		
-		if co.bonusMap["multicraft"] then
+		other = other + CSDebug:StopProfiling("other")
+		
+		local function tblfind(tbl, func)
+			for i = 1, #tbl do
+				if func(tbl[i]) then
+					return true
+				end
+			end
+			return false
+		end
+		
+		CSDebug:StartProfiling("multicraft")
+		
+		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "multicraft" end) then
 			if item.extraQuantity then
 				item.triggeredMulticraft = true
 				item.multicraftFactor = item.extraQuantity / item.normalQuantity
@@ -241,7 +238,11 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			end
 		end
 		
-		if co.bonusMap["resourcefulness"] then
+		multicraft = multicraft + CSDebug:StopProfiling("multicraft")
+		
+		CSDebug:StartProfiling("resourcefulness")
+		
+		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "resourcefulness" end) then
 			local typesUsed = 0
 			local typesReturned = 0
 			local reagents = co.reagents
@@ -263,34 +264,57 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 			co.typesReturned = typesReturned
 		end
 		
-		if co.bonusMap["ingenuity"] then
+		resourcefulness = resourcefulness + CSDebug:StopProfiling("resourcefulness")
+		
+		CSDebug:StartProfiling("ingenuity")
+		if tblfind(co.bonusStats, function(stat) return stat.bonusStatName == "ingenuity" end) then
 			if concentration.concentrating and concentration.triggeredIngenuity then
 				concentration.ingenuityRefund = math.ceil(concentration.concentrationSpent / 2)
 			else
 				concentration.ingenuityRefund = nil
 			end
 		end
+		
+		ingenuity = ingenuity + CSDebug:StopProfiling("ingenuity")
 
+		CSDebug:StartProfiling("map")
 		--Get Overall Map
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(co)
-		prepTime = prepTime + CSDebug:StopProfiling("Prep Data")
-
-		CSDebug:StartProfiling("Pull Data")
+		maptime = maptime + CSDebug:StopProfiling("map")
 		--Build Data 
-		local row = {}
-		for j = 1, numColumns do 
-			local value = craftOutputMap[columns[j]]
-			row[j] = value == nil and "" or tostring(value)
+		CSDebug:StartProfiling("build")
+		clear(row)
+		for j = 1, #columns do 
+			--640
+			--CSDebug:StartProfiling("Column Find")
+			local column = columns[j]
+			--columnFind = columnFind + CSDebug:StopProfiling("Column Find")
+			--672
+			--CSDebug:StartProfiling("CO Find")
+			local value = craftOutputMap[column]
+			--coFind = coFind + CSDebug:StopProfiling("CO Find")
+			--1104
+			--CSDebug:StartProfiling("Value Fix")
+			row[j] = value ~= nil and str(value) or ""
+			--valueFix = valueFix + CSDebug:StopProfiling("Value Fix")
 		end
-		pullTime = pullTime + CSDebug:StopProfiling("Pull Data")
 		
 		addRow(row)
+		build = build + CSDebug:StopProfiling("build")
 	end
 	CSDebug:StopProfiling("MAKE DATA")
 
-	print(prepTime)
-	print(pullTime)
-	
+	print(other)
+	print(multicraft)
+	print(resourcefulness)
+	print(ingenuity)
+	print(maptime)
+	print(build)
+	print(columnFind)
+	print(coFind)
+	print(valueFix)
+	print("Total" .. other + multicraft + resourcefulness + ingenuity + maptime + columnFind + coFind + build + valueFix)
+
 	CSDebug:StartProfiling("TABLE COMBINE")
 	local csv = concat(csvTable, "\n")
 	CSDebug:StopProfiling("TABLE COMBINE")
@@ -299,6 +323,7 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 end
 
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
+	
 	local map = {
 		["Date"] = craftOutput.date,
 		["Game Version"] = craftOutput.gameVersion,
@@ -334,24 +359,11 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
-
-	local bonusMap = craftOutput.bonusMap
-	for title, bonusStat in pairs(bonusMap) do
-		map[title .. " Value"] = bonusStat.bonusStatValue
-		map[title .. " Percent"] = bonusStat.ratingPct
-		map[title .. " Bonus"] = bonusStat.extraValue
-	end
-
-	local optionalReagentMap = craftOutput.optionalReagentMap
-	for title, reagent in pairs(optionalReagentMap) do
-		map[title .. " Name"] = reagent.itemName
-		map[title .. " Quality"] = reagent.quality
-		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
-		map[title .. " Consumed Quantity"] = reagent.quantity
-	end
-
-	local reagentMap = craftOutput.reagentMap
-	for title, reagent in pairs(reagentMap) do
+		
+		
+	for i = 1, #craftOutput.reagents do
+		local reagent = craftOutput.reagents[i]
+		local title = "Required Reagent " .. i
 		map[title .. " Name"] = reagent.itemName
 		map[title .. " Quality"] = reagent.quality
 		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
@@ -361,5 +373,22 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
 	end
 	
+	for i = 1, #craftOutput.optionalReagents do
+		local reagent = craftOutput.optionalReagents[i]
+		local title = "Optional Reagent " .. i
+		map[title .. " Name"] = reagent.itemName
+		map[title .. " Quality"] = reagent.quality
+		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+		map[title .. " Consumed Quantity"] = reagent.quantity
+	end
+	
+	for i = 1, #craftOutput.bonusStats do
+		local bonusStat = craftOutput.bonusStats[i]
+		local title = bonusStat.bonusStatName
+		map[title .. " Value"] = bonusStat.bonusStatValue
+		map[title .. " Percent"] = bonusStat.ratingPct
+		map[title .. " Bonus"] = bonusStat.extraValue
+	end
+
 	return map
 end

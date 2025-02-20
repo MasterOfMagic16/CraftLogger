@@ -98,7 +98,6 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
     accumulatingCraftOutputData = {}
 
 	--The only lag error is quantity
-	print("CheckL")
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
 	accumulatedCraftOutput.item.quantity = 0
 	local craftedItemID = accumulatedCraftOutput.item.itemID

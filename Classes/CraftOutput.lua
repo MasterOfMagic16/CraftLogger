@@ -14,14 +14,9 @@ end
 
 --Creates Linked To Tables
 function CraftLogger.CraftOutput:new(craftOutputData)
-	print("Check")
-	print(craftOutputData.test)
 	setmetatable(craftOutputData or {}, {__index = self})
-	print(craftOutputData.test)
-	print(self.test)
 	self = craftOutputData
-	print(self.test)
-	print("Check2")
+
 	return self
 end
 
@@ -29,7 +24,6 @@ end
 
 --Create new data for upload to CraftLoggerDB
 function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
-	print("Check5")
 	--MetaData
 	self.date = date("%m/%d/%y %H:%M:%S")
 	self.gameVersion = select(1, GetBuildInfo())
@@ -233,6 +227,7 @@ end
 --Prepare for addition to CraftLoggerDB
 function CraftLogger.CraftOutput:Clean()
 	--Other
+	self.test = nil
 	self.profession = nil
 	self.expansionName = nil
 	self.isOldWorldRecipe = nil

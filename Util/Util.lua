@@ -1,7 +1,5 @@
 local CraftLogger = select(2, ...)
 
-print("Util Loaded")
-
 local systemPrint = print
 
 local GUTIL = CraftLogger.GUTIL
@@ -11,6 +9,7 @@ CraftLogger.UTIL = {}
 local print
 function CraftLogger.UTIL:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Util")
+	print("UTIL Loaded")
 end
 
 --Core

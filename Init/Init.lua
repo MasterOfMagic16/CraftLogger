@@ -4,7 +4,7 @@ local systemPrint = print
 
 local GUTIL = CraftLogger.GUTIL
 
-CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" })
+CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" , "PLAYER_LOGOUT"})
 
 --Initialize Global Tracking
 CraftLoggerDB = CraftLoggerDB or {}
@@ -19,7 +19,9 @@ function CraftLogger.INIT:PLAYER_LOGIN()
 		
 		CraftLogger.INIT:Init()
 		CraftLogger.UTIL:Init()
+		print("Check6")
 		CraftLogger.CraftOutput:Init()
+		print("Check7")
 		CraftLogger.Logger:Init()
 		CraftLogger.DBManipulator:Init()
 		CraftLogger.Export:Init()
@@ -32,6 +34,7 @@ end
 local print
 function CraftLogger.INIT:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Init")
+	print("INIT Loaded")
 end
 
 --Mirrors CraftSim with extra handling

@@ -9,21 +9,27 @@ CraftLogger.CraftOutput = CraftLogger.CraftLoggerObject:extend()
 local print
 function CraftLogger.CraftOutput:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.CraftOutput")
+	print("CraftOutput Loaded")
 end
 
---For initializing CraftLoggerDB classes
---Assume no further nested classes
+--Creates Linked To Tables
 function CraftLogger.CraftOutput:new(craftOutputData)
-	if craftOutputData then
-		local copiedTable = CraftLogger.UTIL:CopyNestedTable(craftOutputData)
-		for key, value in pairs(copiedTable) do
-			self[key] = value
-		end
-	end
+	print("Check")
+	print(craftOutputData.test)
+	setmetatable(craftOutputData or {}, {__index = self})
+	print(craftOutputData.test)
+	print(self.test)
+	self = craftOutputData
+	print(self.test)
+	print("Check2")
+	return self
 end
+
+
 
 --Create new data for upload to CraftLoggerDB
 function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
+	print("Check5")
 	--MetaData
 	self.date = date("%m/%d/%y %H:%M:%S")
 	self.gameVersion = select(1, GetBuildInfo())
@@ -218,7 +224,9 @@ function CraftLogger.CraftOutput:Printing()
 end
 
 function CraftLogger.CraftOutput:Copy()
-	local copy = CraftLogger.CraftOutput(self)
+	local copiedTable = CraftLogger.UTIL:CopyNestedTable(self)
+	local copy = CraftLogger.CraftOutput:new(copiedTable)
+
 	return copy
 end
 
@@ -226,10 +234,10 @@ end
 function CraftLogger.CraftOutput:Clean()
 	--Other
 	self.profession = nil
-	self.isGear = nil
 	self.expansionName = nil
-	self.isSoulbound = nil
 	self.isOldWorldRecipe = nil
+	self.isGear = nil
+	self.isSoulbound = nil
 	
 	--Multicraft
 	self.item.normalQuantity = nil
@@ -315,8 +323,4 @@ function CraftLogger.CraftOutput:SetAllStats(cachedProfessionInfo, cachedItemSta
 			self.concentration.ingenuityRefund = nil
 		end
 	end
-
-
-
-
 end

@@ -1,5 +1,7 @@
 local CraftLogger = select(2, ...)
 
+print("Util Loaded")
+
 local systemPrint = print
 
 local GUTIL = CraftLogger.GUTIL

@@ -9,6 +9,7 @@ CraftLogger.Logger = GUTIL:CreateRegistreeForEvents({ "TRADE_SKILL_ITEM_CRAFTED_
 local print
 function CraftLogger.Logger:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Logger")
+	print("Logger Loaded")
 end
 
 function CraftLogger.Logger:SetRecipeData(recipeData)
@@ -25,10 +26,10 @@ local accumulatingCraftOutputData = {}
 local isAccumulatingCraftOutputData = true
 function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultData)
 	local recipeData = CraftLogger.Logger.currentRecipeData
-
+	
 	--Filter Conditions
 	if not CraftLoggerDBSettings.enabled then
-		systemPrint("CraftLogger: CraftLogger Is Currently Disabled.")
+		systemPrint("CraftLogger: CraftLogger Is Currently Disabled. Please Run /run CLEnable() When Ready.")
 		return
 	end
 	
@@ -74,10 +75,12 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 		return
 	end
 	--End Filter Conditions
-
-	local craftOutput = CraftLogger.CraftOutput()
+	
+	local craftOutputData = {test = "test"}
+	local craftOutput = CraftLogger.CraftOutput:new(craftOutputData)
 	craftOutput:Generate(recipeData, craftingItemResultData)
-
+	
+	CLTest = craftOutput
 
 	table.insert(accumulatingCraftOutputData, craftOutput)
 	if isAccumulatingCraftOutputData then
@@ -95,6 +98,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
     accumulatingCraftOutputData = {}
 
 	--The only lag error is quantity
+	print("CheckL")
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
 	accumulatedCraftOutput.item.quantity = 0
 	local craftedItemID = accumulatedCraftOutput.item.itemID

@@ -24,7 +24,7 @@ Util/Util.lua
 
 Classes/CraftLoggerObject.lua
 Classes/CraftOutput.lua
-Classes/CraftOutputTable.lua
+Classes/CraftOutputList.lua
 
 Modules/Logger.lua
 Modules/Export.lua

@@ -38,7 +38,7 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 	if not KethoEditBox then
 		local f = CreateFrame("Frame", "KethoEditBox", UIParent, "DialogBoxFrame")
 		f:SetPoint("CENTER")
-		f:SetSize(600, 500)
+		f:SetSize(600, 100)
 		
 		f:SetBackdrop({
 			bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -76,6 +76,8 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 		-- Resizable
 		f:SetResizable(true)
 		--f:SetMinResize(150, 100)
+		eb:SetJustifyH("CENTER")
+		eb:SetJustifyV("MIDDLE")
 		
 		local rb = CreateFrame("Button", "KethoEditBoxResizeButton", KethoEditBox)
 		rb:SetPoint("BOTTOMRIGHT", -6, 7)
@@ -103,6 +105,15 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 		KethoEditBoxEditBox:SetText(text)
 	end
 	KethoEditBox:Show()
+	
+	local df = CreateFrame("Frame", "TestFrame", UIParent)
+	df:SetPoint("CENTER")
+	df:SetSize(600, 100)
+	df.texture = df:CreateTexture()
+	df.texture:SetAllPoints()
+	df.texture:SetColorTexture(1.0, 0.5, 0, 1.0)
+	
+	df:Show()
 end
 
 --Manipulate

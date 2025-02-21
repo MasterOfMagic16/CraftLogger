@@ -21,10 +21,9 @@ end
 
 function CraftLogger.CraftOutputList:Copy()
 	local copy = CraftLogger.CraftOutputList:new()
-	for _, craftOutput in ipairs(self) do
-		table.insert(copy, craftOutput:Copy())
+	for i, craftOutput in ipairs(self) do
+		copy[i] = craftOutput:Copy()
 	end
-	
 	return copy
 end
 

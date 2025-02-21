@@ -11,7 +11,9 @@ CraftLoggerDB = CraftLoggerDB or {}
 VersionReshapes = VersionReshapes or {}
 
 local print
+local CSDebug
 function CraftLogger.DBManipulator:Init()
+	CSDebug = CraftSimAPI:GetCraftSim().DEBUG
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.DBManipulator")
 	print("DBManipulator Loaded")
 	
@@ -22,8 +24,7 @@ function CraftLogger.DBManipulator:Init()
 	CraftLogger.CraftOutputList:new(CraftLoggerDB)
 	CraftLoggerDB:SetAllStats()
 	
-	--Set Backups
-	CraftLogger.DBManipulator.DBBackup = CraftLoggerDB:Copy()
+	--Set Session Backup
 	CraftLogger.DBManipulator.SessionBackup = CraftLoggerDB:Copy()
 end
 

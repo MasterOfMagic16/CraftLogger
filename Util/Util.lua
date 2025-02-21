@@ -104,16 +104,25 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 	if text then
 		KethoEditBoxEditBox:SetText(text)
 	end
-	KethoEditBox:Show()
 	
-	local df = CreateFrame("Frame", "TestFrame", UIParent)
-	df:SetPoint("CENTER")
-	df:SetSize(600, 100)
+	--Instruction Box
+	local df = CreateFrame("Frame", "TestFrame", KethoEditBox)
+	df:SetPoint("BOTTOM", KethoEditBox, "TOP", 0, -8)
+	df:SetSize(600 - 12, 30)
+	
 	df.texture = df:CreateTexture()
 	df.texture:SetAllPoints()
-	df.texture:SetColorTexture(1.0, 0.5, 0, 1.0)
+	df.texture:SetColorTexture(.149, .118, .090, .75)
 	
-	df:Show()
+	df.text = df:CreateFontString(nil,"ARTWORK") 
+	df.text:SetFontObject("ChatFontNormal")
+	df.text:SetPoint("CENTER",0,0)
+	
+	df.text:SetText("Only Some Data Is Displayed. Select The Text And Press Ctrl-A, Then Ctrl-C To Copy The Full Text.")
+	
+	KethoEditBox:Show()
+
+	--df:Show()
 end
 
 --Manipulate

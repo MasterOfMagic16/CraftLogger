@@ -76,12 +76,9 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 	end
 	--End Filter Conditions
 	
-	local craftOutputData = {test = "test"}
-	local craftOutput = CraftLogger.CraftOutput:new(craftOutputData)
+	local craftOutput = CraftLogger.CraftOutput:new()
 	craftOutput:Generate(recipeData, craftingItemResultData)
 	
-	CLTest = craftOutput
-
 	table.insert(accumulatingCraftOutputData, craftOutput)
 	if isAccumulatingCraftOutputData then
         isAccumulatingCraftOutputData = false
@@ -110,8 +107,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	end
 
 	--Verify Output is Clean For CraftLoggerDB
-	accumulatedCraftOutput:Clean()
-	table.insert(CraftLoggerDB, accumulatedCraftOutput)
+	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()
 	

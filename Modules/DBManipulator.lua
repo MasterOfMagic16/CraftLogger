@@ -5,25 +5,32 @@ local systemPrint = print
 local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.DBManipulator = GUTIL:CreateRegistreeForEvents({ "PLAYER_LOGOUT" })
-CraftLogger.DBManipulator.DBLinkedCraftOutputList = CraftLogger.CraftOutputList(CraftLoggerDB)
 
+--Initialize Saved DB Variables
+CraftLoggerDB = CraftLoggerDB or {}
 VersionReshapes = VersionReshapes or {}
 
 local print
 function CraftLogger.DBManipulator:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.DBManipulator")
 	print("DBManipulator Loaded")
+	
+	--Handle Database Changes From Previous Versions
 	CraftLogger.DBManipulator:ReshapeByVersion()
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList:SetAllStats()
-	CraftLogger.DBManipulator.DBBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
-	CraftLogger.DBManipulator.SessionBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
+	
+	--Initialize Classes & Stats
+	CraftLogger.CraftOutputList:new(CraftLoggerDB)
+	CraftLoggerDB:SetAllStats()
+	
+	--Set Backups
+	CraftLogger.DBManipulator.DBBackup = CraftLoggerDB:Copy()
+	CraftLogger.DBManipulator.SessionBackup = CraftLoggerDB:Copy()
 end
 
 function CraftLogger.DBManipulator:PLAYER_LOGOUT()
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList:Clean()
+	--Storage Efficiency
+	CraftLoggerDB:Clean()
 end
-
-
 
 
 --Globals
@@ -43,7 +50,7 @@ function CLClear()
 	systemPrint("CraftLogger: Clearing DB...")
 	
 	local function DBClear()
-		CraftLoggerDB = {}
+		CraftLoggerDB:Clear()
 		assert(#CraftLoggerDB == 0, "CraftLogger: Failed DB Clear.")
 		systemPrint("CraftLogger: DB Cleared.")
 	end
@@ -106,11 +113,23 @@ function CLRemoveLast()
 	CraftLogger.DBManipulator:Protect(DBRemoveLastEntry)
 end
 
+function CLSetStats()
+	systemPrint("CraftLogger: Setting Stats...")
+	
+	local function DBSetStats()
+		CraftLoggerDB:SetAllStats()
+		systemPrint("CraftLogger: Stats Set.")
+	end
+	
+	CraftLogger.DBManipulator:Protect(DBSetStats)
+end
+
 function CLClean()
 	systemPrint("CraftLogger: Cleaning DB...")
 	
 	local function DBClean()
-		CraftLogger.DBManipulator.DBLinkedCraftOutputList:Clean()
+		CraftLoggerDB:Clean()
+		systemPrint("CraftLogger: Cleaned DB.")
 	end
 	
 	CraftLogger.DBManipulator:Protect(DBClean)
@@ -166,9 +185,6 @@ function CLFilter(valremovefunc, field1, field2)
 	systemPrint("CraftLogger: Filtering DB...")
 	
 	local function DBFilter(valremovefunc, field1, field2)
-	
-		
-	
 		local sizeBefore = #CraftLoggerDB
 		
 		local function removefunc(craftOutput)
@@ -235,25 +251,20 @@ end
 
 function CraftLogger.DBManipulator:SetDBBackup()
 	assert(CraftLoggerDB, "CraftLogger: No CraftLoggerDB.")
-	CraftLogger.DBManipulator.DBBackup = CraftLogger.UTIL:CopyNestedTable(CraftLoggerDB)
+	CraftLogger.DBManipulator.DBBackup = CraftLoggerDB:Copy()
 end
 
 function CraftLogger.DBManipulator:RestoreDBBackup()
 	assert(CraftLogger.DBManipulator.DBBackup, "CraftLogger: No Backup.")
-	CraftLoggerDB = CraftLogger.UTIL:CopyNestedTable(CraftLogger.DBManipulator.DBBackup)
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList = CraftLogger.CraftOutputList(CraftLoggerDB)
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList:SetAllStats()
+	CraftLoggerDB = CraftLogger.DBManipulator.DBBackup:Copy()
 end
 
 function CraftLogger.DBManipulator:RestoreDBSessionBackup()
 	assert(CraftLogger.DBManipulator.SessionBackup, "CraftLogger: No Session Backup.")
-	CraftLoggerDB = CraftLogger.UTIL:CopyNestedTable(CraftLogger.DBManipulator.SessionBackup)
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList = CraftLogger.CraftOutputList(CraftLoggerDB)
-	CraftLogger.DBManipulator.DBLinkedCraftOutputList:SetAllStats()
+	CraftLoggerDB = CraftLogger.DBManipulator.SessionBackup:Copy()
 end
 
-
-
+--No Class or Extended Stats
 function CraftLogger.DBManipulator:ReshapeByVersion()
 	if not VersionReshapes["0.2.0"] then
 		for _, craftOutput in pairs(CraftLoggerDB) do

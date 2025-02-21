@@ -14,10 +14,10 @@ end
 
 --Creates Linked To Tables
 function CraftLogger.CraftOutput:new(craftOutputData)
-	setmetatable(craftOutputData or {}, {__index = self})
-	self = craftOutputData
-
-	return self
+	craftOutputData = craftOutputData or {}
+	setmetatable(craftOutputData, self)
+	self.__index = self
+	return craftOutputData
 end
 
 
@@ -253,7 +253,6 @@ end
 
 --For Export
 function CraftLogger.CraftOutput:SetAllStats(cachedProfessionInfo, cachedItemStats)
-
 	cachedProfessionInfo[self.recipeID] = cachedProfessionInfo[self.recipeID] or C_TradeSkillUI.GetProfessionInfoByRecipeID(self.recipeID)
 	local professionInfo = cachedProfessionInfo[self.recipeID]
 	self.profession = professionInfo.parentProfessionName

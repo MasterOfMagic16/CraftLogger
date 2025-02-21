@@ -11,27 +11,12 @@ end
 
 function CLExport()
 	CSDebug:StartProfiling("OVERALL EXPORT")
-	local craftOutputs = CraftLogger.Export:GetLinkedDBCraftOutputs()
-	local text = CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
+	local text = CraftLogger.Export:GetCraftOutputListCSV(CraftLoggerDB)
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
-function CraftLogger.Export:GetLinkedDBCraftOutputs()
-	local craftOutputs = GUTIL:Map(CraftLoggerDB, 
-		function(co) 
-		return CraftLogger.CraftOutput:new(co)
-		end)
-	return craftOutputs
-end
-
 function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
-	--Prep Data
-	local cachedProfessionInfo = {}
-	local cachedItemStats = {}
-	for _, craftOutput in ipairs(craftOutputs) do
-		craftOutput:SetAllStats(cachedProfessionInfo, cachedItemStats)
-	end
 	--Get Columns
 	--Prep Variable Columns
 	local maxReagentTypes = 0
@@ -113,9 +98,7 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 	end
 
 	local csv = table.concat(csvTable, "\n")
-	for _, craftOutput in ipairs(craftOutputs) do
-		craftOutput:Clean()
-	end
+
 	return csv
 end
 

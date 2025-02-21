@@ -11,28 +11,12 @@ end
 
 function CLExport()
 	CSDebug:StartProfiling("OVERALL EXPORT")
-	local craftOutputs = CraftLogger.Export:GetDBCraftOutputs()
-	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
+	local text = CraftLogger.Export:GetCraftOutputListCSV(CraftLoggerDB)
 	CraftLogger.UTIL:KethoEditBox_Show(text)
 	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
-function CraftLogger.Export:GetDBCraftOutputs()
-	local craftOutputs = GUTIL:Map(CraftLoggerDB, 
-		function(co) 
-		return CraftLogger.CraftOutput(co)
-		end)
-	return craftOutputs
-end
-
-function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
-	--Prep Data
-	local cachedProfessionInfo = {}
-	local cachedItemStats = {}
-	for _, craftOutput in ipairs(craftOutputs) do
-		craftOutput:SetAllStats(cachedProfessionInfo, cachedItemStats)
-	end
-	
+function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 	--Get Columns
 	--Prep Variable Columns
 	local maxReagentTypes = 0
@@ -81,14 +65,6 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		table.insert(columns, bonusStatName .. " Bonus")
 	end
 	
-	for i = 1, maxOptionalReagentTypes do
-		local title = "Optional Reagent " .. i
-		table.insert(columns, title .. " Name")
-		table.insert(columns, title .. " Quality")
-		table.insert(columns, title .. " Provided By Customer")
-		table.insert(columns, title .. " Consumed Quantity")
-	end
-	
 	for i = 1, maxReagentTypes do
 		local title = "Required Reagent " .. i
 		table.insert(columns, title .. " Name")
@@ -100,6 +76,13 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputs)
 		table.insert(columns, title .. " Resourcefulness Factor")
 	end
 	
+	for i = 1, maxOptionalReagentTypes do
+		local title = "Optional Reagent " .. i
+		table.insert(columns, title .. " Name")
+		table.insert(columns, title .. " Quality")
+		table.insert(columns, title .. " Provided By Customer")
+		table.insert(columns, title .. " Consumed Quantity")
+	end
 	--Generate CSV
 	local csvTable = {table.concat(columns, ",")}
 	local row = {}

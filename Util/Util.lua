@@ -9,6 +9,7 @@ CraftLogger.UTIL = {}
 local print
 function CraftLogger.UTIL:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Util")
+	print("UTIL Loaded")
 end
 
 --Core

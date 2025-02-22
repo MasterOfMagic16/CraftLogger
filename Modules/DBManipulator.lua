@@ -37,6 +37,7 @@ end
 --Globals
 function CLRestoreSession()
 	systemPrint("CraftLogger: Restoring Session Backup...")
+	CraftLogger.DBManipulator:SetDBBackup()
 	CraftLogger.DBManipulator:RestoreDBSessionBackup()
 	systemPrint("CraftLogger: Session Backup Restored.")
 end
@@ -271,7 +272,7 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 		for _, craftOutput in pairs(CraftLoggerDB) do
 			local bonusStats = {}
 			for key, bonusStat in pairs(craftOutput.bonusStats) do
-				if bonusStat.bonusStatName then
+				if type(key) == "number" or bonusStat.bonusStatName then
 					bonusStats[bonusStat.bonusStatName] = bonusStat
 					bonusStats[bonusStat.bonusStatName].bonusStatName = nil
 				end

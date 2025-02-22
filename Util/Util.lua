@@ -39,7 +39,6 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 		local f = CreateFrame("Frame", "KethoEditBox", UIParent, "DialogBoxFrame")
 		f:SetPoint("CENTER")
 		f:SetSize(600, 100)
-		
 		f:SetBackdrop({
 			bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
 			edgeFile = "Interface\\PVPFrame\\UI-Character-PVP-Highlight", -- this one is neat
@@ -57,47 +56,18 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 		end)
 		f:SetScript("OnMouseUp", f.StopMovingOrSizing)
 		
-		-- ScrollFrame
-		local sf = CreateFrame("ScrollFrame", "KethoEditBoxScrollFrame", KethoEditBox, "UIPanelScrollFrameTemplate")
-		sf:SetPoint("LEFT", 16, 0)
-		sf:SetPoint("RIGHT", -32, 0)
-		sf:SetPoint("TOP", 0, -16)
-		sf:SetPoint("BOTTOM", KethoEditBoxButton, "TOP", 0, 0)
-		
 		-- EditBox
-		local eb = CreateFrame("EditBox", "KethoEditBoxEditBox", KethoEditBoxScrollFrame)
-		eb:SetSize(sf:GetSize())
-		--eb:SetMultiLine(true)
-		eb:GetRegions():SetNonSpaceWrap(true)
+		local eb = CreateFrame("EditBox", "KethoEditBoxEditBox", KethoEditBox)
+		eb:SetPoint("LEFT", 16, 0)
+		eb:SetPoint("RIGHT", -16, 0)
+		eb:SetPoint("TOP", 0, -16)
+		eb:SetPoint("BOTTOM", KethoEditBoxButton, "TOP", 0, 0)
 		eb:SetAutoFocus(false) -- dont automatically focus
 		eb:SetFontObject("ChatFontNormal")
 		eb:SetScript("OnEscapePressed", function() f:Hide() end)
-		sf:SetScrollChild(eb)
-		-- Resizable
-		f:SetResizable(true)
-		--f:SetMinResize(150, 100)
 		eb:SetJustifyH("CENTER")
 		eb:SetJustifyV("MIDDLE")
-		
-		local rb = CreateFrame("Button", "KethoEditBoxResizeButton", KethoEditBox)
-		rb:SetPoint("BOTTOMRIGHT", -6, 7)
-		rb:SetSize(16, 16)
-		
-		rb:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-		rb:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-		rb:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-		
-		rb:SetScript("OnMouseDown", function(self, button)
-			if button == "LeftButton" then
-				f:StartSizing("BOTTOMRIGHT")
-				self:GetHighlightTexture():Hide() -- more noticeable
-			end
-		end)
-		rb:SetScript("OnMouseUp", function(self, button)
-			f:StopMovingOrSizing()
-			self:GetHighlightTexture():Show()
-			eb:SetWidth(sf:GetWidth())
-		end)
+
 		f:Show()
 	end
 	
@@ -118,7 +88,7 @@ function CraftLogger.UTIL:KethoEditBox_Show(text)
 	df.text:SetFontObject("ChatFontNormal")
 	df.text:SetPoint("CENTER",0,0)
 	
-	df.text:SetText("Only Some Data Is Displayed. Select The Text And Press Ctrl-A, Then Ctrl-C To Copy The Full Text.")
+	df.text:SetText("Only Some Data Is Displayed. Click Inside The Box And Press Ctrl-A, Then Ctrl-C To Copy The Full CSV.")
 	
 	KethoEditBox:Show()
 

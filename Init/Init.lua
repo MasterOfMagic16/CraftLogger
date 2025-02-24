@@ -6,29 +6,32 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" })
 
---Initialize Global Tracking
-CraftLoggerDB = CraftLoggerDB or {}
-CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true, debugging = false}
+--Initialize Saved Non-DB Variables
+CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true}
 
+local print
 function CraftLogger.INIT:PLAYER_LOGIN()
 	if C_AddOns.IsAddOnLoaded("CraftSim") then
 		systemPrint("CraftLogger: Loaded.")
-		CraftLogger.INIT:InitCraftRecipeHooks()
-		
-		CraftLogger.INIT:Init()
+	
+		--Debug
+		CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("Profiling")
+		print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Init")
+		print("INIT Loaded")
+	
+		--Module Inits
 		CraftLogger.UTIL:Init()
 		CraftLogger.CraftOutput:Init()
 		CraftLogger.Logger:Init()
 		CraftLogger.DBManipulator:Init()
+		CraftLogger.Export:Init()
+		
+		--Craft Hooks
+		CraftLogger.INIT:InitCraftRecipeHooks()
 	else
 		systemPrint("CraftLogger: CraftSim Addon Is Not Loaded. CraftLogger Is Disabled.")
 		CraftLoggerDBSettings.enabled = false
 	end
-end
-
-local print
-function CraftLogger.INIT:Init()
-	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Init")
 end
 
 --Mirrors CraftSim with extra handling

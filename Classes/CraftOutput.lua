@@ -9,18 +9,18 @@ CraftLogger.CraftOutput = CraftLogger.CraftLoggerObject:extend()
 local print
 function CraftLogger.CraftOutput:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.CraftOutput")
+	print("CraftOutput Loaded")
 end
 
---For initializing CraftLoggerDB classes
---Assume no further nested classes
+--Creates Linked To Tables
 function CraftLogger.CraftOutput:new(craftOutputData)
-	if craftOutputData then
-		local copiedTable = CraftLogger.UTIL:CopyNestedTable(craftOutputData)
-		for key, value in pairs(copiedTable) do
-			self[key] = value
-		end
-	end
+	craftOutputData = craftOutputData or {}
+	setmetatable(craftOutputData, self)
+	self.__index = self
+	return craftOutputData
 end
+
+
 
 --Create new data for upload to CraftLoggerDB
 function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
@@ -174,12 +174,11 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 				(name == "craftingspeed" and recipeData.supportsCraftingspeed) or
 				(name == "ingenuity" and recipeData.supportsIngenuity) then
 			
-			table.insert(self.bonusStats, {
-			bonusStatName = professionStat.name,
-			bonusStatValue = GUTIL:Round(professionStat.value),
-			ratingPct = professionStat:GetPercent(),
-			extraValue = professionStat.extraValues[1] or 0,
-			})
+			self.bonusStats[name] = {
+				bonusStatValue = GUTIL:Round(professionStat.value),
+				ratingPct = professionStat:GetPercent(),
+				extraValue = professionStat.extraValues[1] or 0,
+				}
 		end
 	end
 end
@@ -213,24 +212,27 @@ function CraftLogger.CraftOutput:Printing()
 	local triggeredIngenuityPrint = (self.concentration.triggeredIngenuity == nil and "N/A") or tostring(self.concentration.triggeredIngenuity)
 	systemPrint("Concentrating: " .. concentratingPrint .. ", Triggered Ingenuity: " .. triggeredIngenuityPrint)
 	
-	for _, bonusStat in pairs(self.bonusStats) do
-		systemPrint(bonusStat.bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
+	for bonusStatName, bonusStat in pairs(self.bonusStats) do
+		systemPrint(bonusStatName .. ": " .. bonusStat.bonusStatValue .. " (" .. math.floor(bonusStat.ratingPct * 10^2 + .5) / 10^2 .. "%)")
 	end
 end
 
 function CraftLogger.CraftOutput:Copy()
-	local copy = CraftLogger.CraftOutput(self)
+	local copiedTable = CraftLogger.UTIL:CopyNestedTable(self)
+	local copy = CraftLogger.CraftOutput:new(copiedTable)
+
 	return copy
 end
 
 --Prepare for addition to CraftLoggerDB
 function CraftLogger.CraftOutput:Clean()
 	--Other
+	self.test = nil
 	self.profession = nil
-	self.isGear = nil
 	self.expansionName = nil
-	self.isSoulbound = nil
 	self.isOldWorldRecipe = nil
+	self.isGear = nil
+	self.isSoulbound = nil
 	
 	--Multicraft
 	self.item.normalQuantity = nil
@@ -249,88 +251,70 @@ function CraftLogger.CraftOutput:Clean()
 	self.concentration.ingenuityRefund = nil
 end
 
---The Below Methods Are For Export
-function CraftLogger.CraftOutput:SetOtherStats()
-	local professionInfo = C_TradeSkillUI.GetProfessionInfoByRecipeID(self.recipeID)
+--For Export
+function CraftLogger.CraftOutput:SetAllStats(cachedProfessionInfo, cachedItemStats)
+	cachedProfessionInfo[self.recipeID] = cachedProfessionInfo[self.recipeID] or C_TradeSkillUI.GetProfessionInfoByRecipeID(self.recipeID)
+	local professionInfo = cachedProfessionInfo[self.recipeID]
 	self.profession = professionInfo.parentProfessionName
 	self.expansionName = professionInfo.expansionName
-	
 	self.isOldWorldRecipe = self.expansionID <= 8
 	
-	self.isGear = C_Item.GetItemInventoryTypeByID(self.item.itemID) ~= 0
-	local bindType = select(14, C_Item.GetItemInfo(self.item.itemID))
-	self.isSoulbound = 	bindType == Enum.ItemBind.OnAcquire or
-						bindType == Enum.ItemBind.Quest or
-						bindType == Enum.ItemBind.ToWoWAccount or
-						bindType == Enum.ItemBind.ToBnetAccount
-end
-
-function CraftLogger.CraftOutput:SetMulticraftStats()
-	--Normal Quantity
+	local itemStats = cachedItemStats[self.item.itemID]
+	if not itemStats then
+		local isGear = C_Item.GetItemInventoryTypeByID(self.item.itemID) ~= 0
+		local bindType = select(14, C_Item.GetItemInfo(self.item.itemID))
+		local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
+							bindType == Enum.ItemBind.Quest or
+							bindType == Enum.ItemBind.ToWoWAccount or
+							bindType == Enum.ItemBind.ToBnetAccount
+		itemStats = {isGear = isGear, isSoulbound = isSoulbound}
+		cachedItemStats[self.item.itemID] = itemStats
+	end
+	self.isGear = itemStats.isGear
+	self.isSoulbound = itemStats.isSoulbound
+	
+	--Non-Cache
 	self.item.normalQuantity = self.item.quantity - (self.item.extraQuantity or 0)
 	
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "multicraft" end) then
-		return
-	end
-	
-	if self.expansionID <= 8 then
-		return
-	end
-	
-	--Triggered Multicraft
-	--Multicraft Factor
-	if self.item.extraQuantity then
-		self.item.triggeredMulticraft = true
-		self.item.multicraftFactor = self.item.extraQuantity / self.item.normalQuantity
-	else
-		self.item.triggeredMulticraft = false
-		self.item.multicraftFactor = nil
-	end
-end
+	local bonusStats = self.bonusStats
 
---Note that if original quantity is <= 3, resourcefulness procs won't always return an item
---This is because theorized average return is 0.3, to maintain this the game has invisible resourcefulness procs
---Assume Optional Reagents Can't Proc Resourcefulness
-function CraftLogger.CraftOutput:SetResourcefulnessStats()
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "resourcefulness" end) then
-		return
-	end
-	
-	if self.expansionID <= 8 then
-		return
-	end
-	
-	local typesUsed = 0
-	local typesReturned = 0
-	for _, reagent in pairs(self.reagents) do
-		typesUsed = typesUsed + 1
-		
-		if reagent.quantityReturned then
-			typesReturned = typesReturned + 1
-			reagent.triggeredResourcefulness = true
-			reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
+	if bonusStats["multicraft"] then
+		if self.item.extraQuantity then
+			self.item.triggeredMulticraft = true
+			self.item.multicraftFactor = self.item.extraQuantity / self.item.normalQuantity
 		else
-			reagent.triggeredResourcefulness = false
-			reagent.resourcefulnessFactor = nil
+			self.item.triggeredMulticraft = false
+			self.item.multicraftFactor = nil
 		end
 	end
-	self.typesUsed = typesUsed
-	self.typesReturned = typesReturned
-end
 
+	if bonusStats["resourcefulness"] then
+		local typesUsed = 0
+		local typesReturned = 0
+		local reagents = self.reagents
 
-function CraftLogger.CraftOutput:SetIngenuityStats()
-	if not GUTIL:Find(self.bonusStats, function(bs) return bs.bonusStatName == "ingenuity" end) then
-		return
+		for j = 1, #reagents do
+			local reagent = reagents[j]
+			typesUsed = typesUsed + 1
+
+			if reagent.quantityReturned then
+				typesReturned = typesReturned + 1
+				reagent.triggeredResourcefulness = true
+				reagent.resourcefulnessFactor = reagent.quantityReturned / reagent.quantity
+			else
+				reagent.triggeredResourcefulness = false
+				reagent.resourcefulnessFactor = nil
+			end
+		end
+		self.typesUsed = typesUsed
+		self.typesReturned = typesReturned
 	end
-	
-	if self.expansionID <= 8 then
-		return
-	end
-	
-	if self.concentration.concentrating and self.concentration.triggeredIngenuity then
-		self.concentration.ingenuityRefund = math.ceil(self.concentration.concentrationSpent / 2)
-	else
-		self.concentration.ingenuityRefund = nil
+
+	if bonusStats["ingenuity"] then
+		if self.concentration.concentrating and self.concentration.triggeredIngenuity then
+			self.concentration.ingenuityRefund = ceil(self.concentration.concentrationSpent / 2)
+		else
+			self.concentration.ingenuityRefund = nil
+		end
 	end
 end

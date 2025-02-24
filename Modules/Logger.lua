@@ -9,6 +9,7 @@ CraftLogger.Logger = GUTIL:CreateRegistreeForEvents({ "TRADE_SKILL_ITEM_CRAFTED_
 local print
 function CraftLogger.Logger:Init()
 	print = CraftSimAPI:GetCraftSim().DEBUG:RegisterDebugID("CraftLogger.Logger")
+	print("Logger Loaded")
 end
 
 function CraftLogger.Logger:SetRecipeData(recipeData)
@@ -25,10 +26,10 @@ local accumulatingCraftOutputData = {}
 local isAccumulatingCraftOutputData = true
 function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultData)
 	local recipeData = CraftLogger.Logger.currentRecipeData
-
+	
 	--Filter Conditions
 	if not CraftLoggerDBSettings.enabled then
-		systemPrint("CraftLogger: CraftLogger Is Currently Disabled.")
+		systemPrint("CraftLogger: CraftLogger Is Currently Disabled. Please Run /run CLEnable() When Ready.")
 		return
 	end
 	
@@ -74,11 +75,10 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 		return
 	end
 	--End Filter Conditions
-
-	local craftOutput = CraftLogger.CraftOutput()
+	
+	local craftOutput = CraftLogger.CraftOutput:new()
 	craftOutput:Generate(recipeData, craftingItemResultData)
-
-
+	
 	table.insert(accumulatingCraftOutputData, craftOutput)
 	if isAccumulatingCraftOutputData then
         isAccumulatingCraftOutputData = false
@@ -107,8 +107,7 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	end
 
 	--Verify Output is Clean For CraftLoggerDB
-	accumulatedCraftOutput:Clean()
-	table.insert(CraftLoggerDB, accumulatedCraftOutput)
+	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()
 	

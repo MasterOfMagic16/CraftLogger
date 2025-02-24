@@ -4,61 +4,27 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.Export = {}
 
+local CSDebug
+function CraftLogger.Export:Init()
+	CSDebug = CraftSimAPI:GetCraftSim().DEBUG
+end
+
 function CLExport()
-	local craftOutputTable = CraftLogger.Export:GetDBCraftOutputTable()
-	local text = CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
+	CSDebug:StartProfiling("OVERALL EXPORT")
+	local text = CraftLogger.Export:GetCraftOutputListCSV(CraftLoggerDB)
 	CraftLogger.UTIL:KethoEditBox_Show(text)
+	CSDebug:StopProfiling("OVERALL EXPORT")
 end
 
-function CraftLogger.Export:GetDBCraftOutputTable()
-	local craftOutputs = GUTIL:Map(CraftLoggerDB, 
-		function(co) 
-		return CraftLogger.CraftOutput(co)
-		end)
-	return CraftLogger.CraftOutputTable(craftOutputs)
-end
-
-function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
-	local craftOutputTable = craftOutputTable:Copy()
-	
-	--Prep Data
-	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
-		craftOutput:SetOtherStats()
-		craftOutput:SetMulticraftStats()
-		craftOutput:SetResourcefulnessStats()
-		craftOutput:SetIngenuityStats()
-	end
-	
+function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
+	--Get Columns
 	--Prep Variable Columns
-	local optionalReagentsList = {}
-	local reagentsList = {}
-	for _, craftOutput in pairs(craftOutputTable.craftOutputs) do
-		for _, reagent in pairs(craftOutput.optionalReagents) do
-			if not GUTIL:Some(optionalReagentsList, function(r) return r.itemID == reagent.itemID end) then
-				table.insert(optionalReagentsList, {
-					itemID = reagent.itemID,
-					itemName = reagent.itemName,
-					quality = reagent.quality,
-					})
-			end
-		end
-		
-		for _, reagent in pairs(craftOutput.reagents) do
-			if not GUTIL:Some(reagentsList, function(r) return r.itemID == reagent.itemID end) then
-				table.insert(reagentsList, {
-					itemID = reagent.itemID,
-					itemName = reagent.itemName,
-					quality = reagent.quality
-					})
-			end
-		end
+	local maxReagentTypes = 0
+	local maxOptionalReagentTypes = 0
+	for _, craftOutput in ipairs(craftOutputs) do
+		maxOptionalReagentTypes = max(maxOptionalReagentTypes, #craftOutput.optionalReagents)
+		maxReagentTypes = max(maxReagentTypes, #craftOutput.reagents)
 	end
-	
-	local function compFuncReagent(reagent1,reagent2) return reagent1.itemID < reagent2.itemID end
-	
-	table.sort(optionalReagentsList, compFuncReagent)
-	table.sort(reagentsList, compFuncReagent)
-	local bonusStatNames = {"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}
 	
 	--Set Columns & Order
 	local columns = {
@@ -93,22 +59,16 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		"Resourcefulness-Eligible Reagent Types Returned",
 		}
 	
-	for _, bonusStatName in pairs(bonusStatNames) do
+	for _, bonusStatName in ipairs({"resourcefulness", "craftingspeed", "multicraft", "ingenuity"}) do
 		table.insert(columns, bonusStatName .. " Value")
 		table.insert(columns, bonusStatName .. " Percent")
 		table.insert(columns, bonusStatName .. " Bonus")
 	end
 	
-	for _, reagent in ipairs(optionalReagentsList) do
-		local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-		local title = reagent.itemName .. qualityTitle
-		table.insert(columns, title .. " Provided By Customer")
-		table.insert(columns, title .. " Consumed Quantity")
-	end
-	
-	for _, reagent in ipairs(reagentsList) do
-		local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-		local title = reagent.itemName .. qualityTitle
+	for i = 1, maxReagentTypes do
+		local title = "Required Reagent " .. i
+		table.insert(columns, title .. " Name")
+		table.insert(columns, title .. " Quality")
 		table.insert(columns, title .. " Provided By Customer")
 		table.insert(columns, title .. " Consumed Quantity")
 		table.insert(columns, title .. " Returned Quantity")
@@ -116,42 +76,33 @@ function CraftLogger.Export:GetCraftOutputTableCSV(craftOutputTable)
 		table.insert(columns, title .. " Resourcefulness Factor")
 	end
 	
+	for i = 1, maxOptionalReagentTypes do
+		local title = "Optional Reagent " .. i
+		table.insert(columns, title .. " Name")
+		table.insert(columns, title .. " Quality")
+		table.insert(columns, title .. " Provided By Customer")
+		table.insert(columns, title .. " Consumed Quantity")
+	end
 	--Generate CSV
-	local function join(basedata, data) 
-		if data ~= nil then
-			return basedata .. tostring(data) .. "," 
-		else
-			return basedata .. ","
-		end
-	end
-	
-	local csv = ""
-	
-	--Headers
-	for _, column in ipairs(columns) do
-		csv = join(csv, column)
-	end
-	csv = csv .. "\n"
-	
-	--Data
-	for _, craftOutput in ipairs(craftOutputTable.craftOutputs) do
+	local csvTable = {table.concat(columns, ",")}
+	local row = {}
+	for _, craftOutput in ipairs(craftOutputs) do
 		local craftOutputMap = CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		
-		local line = ""
-		for _, column in ipairs(columns) do
-			line = join(line, craftOutputMap[column])
+		for j = 1, #columns do 
+			local value = craftOutputMap[columns[j]]
+			row[j] = value ~= nil and tostring(value) or ""
 		end
 		
-		csv = csv .. line .. "\n"
+		table.insert(csvTable, table.concat(row, ","))
 	end
-	
+
+	local csv = table.concat(csvTable, "\n")
+
 	return csv
 end
 
 function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
-	craftOutput = craftOutput:Copy()
-	
-	--Set Data to Column Names
 	local map = {
 		["Date"] = craftOutput.date,
 		["Game Version"] = craftOutput.gameVersion,
@@ -187,30 +138,33 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
-	
-	for _, bonusStat in pairs(craftOutput.bonusStats) do
-		map[bonusStat.bonusStatName .. " Value"] = bonusStat.bonusStatValue
-		map[bonusStat.bonusStatName .. " Percent"] = bonusStat.ratingPct
-		map[bonusStat.bonusStatName .. " Bonus"] = bonusStat.extraValue
+		
+	for i = 1, #craftOutput.reagents do
+		local reagent = craftOutput.reagents[i]
+		local title = "Required Reagent " .. i
+		map[title .. " Name"] = reagent.itemName
+		map[title .. " Quality"] = reagent.quality
+		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+		map[title .. " Consumed Quantity"] = reagent.quantity
+		map[title .. " Returned Quantity"] = reagent.quantityReturned
+		map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
+		map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
 	end
 	
-	local allReagents = GUTIL:Concat({
-		craftOutput.reagents,
-		craftOutput.optionalReagents,
-		})
+	for i = 1, #craftOutput.optionalReagents do
+		local reagent = craftOutput.optionalReagents[i]
+		local title = "Optional Reagent " .. i
+		map[title .. " Name"] = reagent.itemName
+		map[title .. " Quality"] = reagent.quality
+		map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
+		map[title .. " Consumed Quantity"] = reagent.quantity
+	end
+	
+	for bonusStatName, bonusStat in pairs(craftOutput.bonusStats) do
+		map[bonusStatName .. " Value"] = bonusStat.bonusStatValue
+		map[bonusStatName .. " Percent"] = bonusStat.ratingPct
+		map[bonusStatName .. " Bonus"] = bonusStat.extraValue
+	end
 
-	for _, reagent in pairs(allReagents) do
-		if reagent.quantity > 0 then
-			local qualityTitle = (reagent.quality == nil and "") or ("*" .. reagent.quality)
-			local title = reagent.itemName .. qualityTitle
-			map[title .. " ID"] = reagent.itemID
-			map[title .. " Provided By Customer"] = reagent.isOrderReagentIn
-			map[title .. " Consumed Quantity"] = reagent.quantity
-			map[title .. " Returned Quantity"] = reagent.quantityReturned
-			map[title .. " Triggered Resourcefulness"] = reagent.triggeredResourcefulness
-			map[title .. " Resourcefulness Factor"] = reagent.resourcefulnessFactor	
-		end
-	end
-	
 	return map
 end

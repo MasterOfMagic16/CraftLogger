@@ -121,6 +121,54 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 			end
 		end
 	end
+	
+	
+	
+	
+	local salvageReagentSlot = recipeData.reagentData.salvageReagentSlot
+	local salvageReagent = salvageReagentSlot.activeItem
+	
+	if salvageReagent then
+		local itemID = salvageReagent.item:GetItemID()
+		
+		local craftingResourceReturnInfo = GUTIL:Find(
+			craftingItemResultData.resourcesReturned, 
+			function(cRRI)
+			return cRRI.itemID == itemID
+			end) 
+			or {}
+			
+		local isOrderReagentIn = false
+		if recipeData.orderData then
+			local orderReagent = GUTIL:Find(recipeData.orderData.reagents or {},
+				function(reagentInfo) 
+				return reagentInfo.reagent.itemID == itemID 
+				end)
+			if orderReagent then
+				isOrderReagentIn = true 
+			end
+		end
+		
+		local quality = C_TradeSkillUI.GetItemReagentQualityByItemInfo(itemID)
+
+		table.insert(self.reagents, {
+			itemName = salvageReagent.item:GetItemName(),
+			itemID = itemID,
+			quality = quality,
+			quantity = salvageReagentSlot.requiredQuantity,
+			quantityReturned = craftingResourceReturnInfo.quantity,
+			isOrderReagentIn = isOrderReagentIn,
+			})
+	end
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	local optionalSlots = GUTIL:Concat({
 		recipeData.reagentData.optionalReagentSlots or {},
@@ -131,7 +179,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	self.optionalReagents = {}	
 	for _, optionalReagentSlot in pairs(optionalSlots) do
 		optionalReagentSlot = optionalReagentSlot or {}
-		local optionalReagent = optionalReagentSlot.activeReagent
+		local optionalReagent = optionalReagentSlot.activeReagent or optionalReagentSlot.activeItem
 		if optionalReagent then
 			local itemID = optionalReagent.item:GetItemID()
 

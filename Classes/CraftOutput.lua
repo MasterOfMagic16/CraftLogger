@@ -122,12 +122,8 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 		end
 	end
 	
-	
-	
-	
 	local salvageReagentSlot = recipeData.reagentData.salvageReagentSlot
 	local salvageReagent = salvageReagentSlot.activeItem
-	
 	if salvageReagent then
 		local itemID = salvageReagent.item:GetItemID()
 		
@@ -160,15 +156,6 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 			isOrderReagentIn = isOrderReagentIn,
 			})
 	end
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 	local optionalSlots = GUTIL:Concat({
 		recipeData.reagentData.optionalReagentSlots or {},
@@ -179,7 +166,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	self.optionalReagents = {}	
 	for _, optionalReagentSlot in pairs(optionalSlots) do
 		optionalReagentSlot = optionalReagentSlot or {}
-		local optionalReagent = optionalReagentSlot.activeReagent or optionalReagentSlot.activeItem
+		local optionalReagent = optionalReagentSlot.activeReagent
 		if optionalReagent then
 			local itemID = optionalReagent.item:GetItemID()
 

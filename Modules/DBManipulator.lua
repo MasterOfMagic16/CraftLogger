@@ -45,6 +45,11 @@ function CLEnable()
 	systemPrint("CraftLogger: Enabled DB.")
 end
 
+function CLResetReshapes()
+	VersionReshapes = {}
+	systemPrint("Reshapes Reset")
+end
+
 function CraftLogger.DBManipulator.RollingDataFalloff()
 	local craftCap = 250000 -- around 340k-400k actual cap, but want enough leeway
 	local removeCount = max(0, #CraftLoggerDB - craftCap)
@@ -60,14 +65,23 @@ end
 function CraftLogger.DBManipulator:ReshapeByVersion()
 	if not VersionReshapes["0.2.0"] then
 		for _, craftOutput in pairs(CraftLoggerDB) do
-			local bonusStats = {}
-			for key, bonusStat in pairs(craftOutput.bonusStats) do
-				if type(key) == "number" or bonusStat.bonusStatName then
-					bonusStats[bonusStat.bonusStatName] = bonusStat
-					bonusStats[bonusStat.bonusStatName].bonusStatName = nil
-				end
+			
+			--Array to Key-Value for bonusStats
+			for key, bonusStat in ipairs(craftOutput.bonusStats) do
+				craftOutput.bonusStats[bonusStat.bonusStatName] = bonusStat
+				craftOutput.bonusStats[bonusStat.bonusStatName].bonusStatName = nil
+				craftOutput.bonusStats[key] = nil
 			end
-			craftOutput.bonusStats = bonusStats
+			
+			--Item to Items list
+			if craftOutput.item then
+				craftOutput.items = {craftOutput.item}
+				craftOutput.item = nil
+				if craftOutput.itemLevel then
+					craftOutput.items[1].itemLevel = craftOutput.itemLevel
+				end
+				craftOutput.itemLevel = nil
+			end
 		end
 		VersionReshapes["0.2.0"] = true
 	end

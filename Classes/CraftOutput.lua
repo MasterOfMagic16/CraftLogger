@@ -20,8 +20,6 @@ function CraftLogger.CraftOutput:new(craftOutputData)
 	return craftOutputData
 end
 
-
-
 --Create new data for upload to CraftLoggerDB
 function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	--MetaData
@@ -33,36 +31,34 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	
 	--Recipe Data 
 	self.expansionID = recipeData.expansionID
-	
 	local retOK, err = pcall(function() assert(recipeData.categoryID and recipeData.categoryID ~= 0, "CraftLogger: Categories Not Loaded. Please Open Profession Window.") end)
 	if not retOK then
 		systemPrint(err)
 		return
 	end
-	
 	self.categoryID = recipeData.categoryID
 	self.categoryName = C_TradeSkillUI.GetCategoryInfo(self.categoryID).name
 	self.recipeID = recipeData.recipeID
 	self.recipeName = recipeData.recipeName
 	self.isWorkOrder = recipeData:IsWorkOrder()
 	self.isRecraft = recipeData.isRecraft
-	if C_Item.GetItemInventoryTypeByID(craftingItemResultData.itemID) ~= 0 then
-		self.itemLevel = select(4, C_Item.GetItemInfo(craftingItemResultData.hyperlink))
-	end
 	self.enchantTargetItemID = recipeData.enchantTargetItemID
 	if self.enchantTargetItemID then 
 		self.enchantTargetItemName = C_Item.GetItemNameByID(recipeData.enchantTargetItemID)
 	end
 	
 	--Item Data
-	self.item = 
-		{itemName = C_Item.GetItemNameByID(craftingItemResultData.itemID),
+	self.items = 
+		{{itemName = C_Item.GetItemNameByID(craftingItemResultData.itemID),
 		itemID = craftingItemResultData.itemID,
 		quality = craftingItemResultData.craftingQuality,
 		quantity = craftingItemResultData.quantity,
 		extraQuantity = (craftingItemResultData.multicraft ~= 0 and craftingItemResultData.multicraft) or nil,
-		}
-		
+		}}
+	if C_Item.GetItemInventoryTypeByID(craftingItemResultData.itemID) ~= 0 then
+		self.items[1].itemLevel = select(4, C_Item.GetItemInfo(craftingItemResultData.hyperlink))
+	end
+	
 	--Concentration Data
 	self.concentration = {}
 	if recipeData.supportsQualities then
@@ -186,8 +182,10 @@ end
 function CraftLogger.CraftOutput:Printing()
 	systemPrint("Recipe: " .. self.recipeName .. " @ " .. self.date)
 
-	local qualityTitleOuter = (self.item.quality == nil and "") or ("*" .. self.item.quality)
-	systemPrint("Result: " .. self.item.itemName .. qualityTitleOuter .. ": x" .. self.item.quantity)
+	for _, item in pairs(self.items) do
+		local qualityTitleOuter = (item.quality == nil and "") or ("*" .. item.quality)
+		systemPrint("Result: " .. item.itemName .. qualityTitleOuter .. ": x" .. item.quantity)
+	end
 	
 	local allReagents = GUTIL:Concat({
 		self.reagents,
@@ -235,9 +233,11 @@ function CraftLogger.CraftOutput:Clean()
 	self.isSoulbound = nil
 	
 	--Multicraft
-	self.item.normalQuantity = nil
-	self.item.triggeredMulticraft = nil
-	self.item.multicraftFactor = nil
+	for _, item in pairs(self.items) do
+		item.normalQuantity = nil
+		item.triggeredMulticraft = nil
+		item.multicraftFactor = nil
+	end
 
 	--Resourcefulness
 	self.typesUsed = nil
@@ -259,32 +259,34 @@ function CraftLogger.CraftOutput:SetAllStats(cachedProfessionInfo, cachedItemSta
 	self.expansionName = professionInfo.expansionName
 	self.isOldWorldRecipe = self.expansionID <= 8
 	
-	local itemStats = cachedItemStats[self.item.itemID]
-	if not itemStats then
-		local isGear = C_Item.GetItemInventoryTypeByID(self.item.itemID) ~= 0
-		local bindType = select(14, C_Item.GetItemInfo(self.item.itemID))
-		local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
-							bindType == Enum.ItemBind.Quest or
-							bindType == Enum.ItemBind.ToWoWAccount or
-							bindType == Enum.ItemBind.ToBnetAccount
-		itemStats = {isGear = isGear, isSoulbound = isSoulbound}
-		cachedItemStats[self.item.itemID] = itemStats
-	end
-	self.isGear = itemStats.isGear
-	self.isSoulbound = itemStats.isSoulbound
-	
-	--Non-Cache
-	self.item.normalQuantity = self.item.quantity - (self.item.extraQuantity or 0)
-	
 	local bonusStats = self.bonusStats
-
-	if bonusStats["multicraft"] then
-		if self.item.extraQuantity then
-			self.item.triggeredMulticraft = true
-			self.item.multicraftFactor = self.item.extraQuantity / self.item.normalQuantity
-		else
-			self.item.triggeredMulticraft = false
-			self.item.multicraftFactor = nil
+	
+	for _, item in pairs(self.items) do
+		local itemStats = cachedItemStats[item.itemID]
+		if not itemStats then
+			local isGear = C_Item.GetItemInventoryTypeByID(item.itemID) ~= 0
+			local bindType = select(14, C_Item.GetItemInfo(item.itemID))
+			local isSoulbound = bindType == Enum.ItemBind.OnAcquire or
+								bindType == Enum.ItemBind.Quest or
+								bindType == Enum.ItemBind.ToWoWAccount or
+								bindType == Enum.ItemBind.ToBnetAccount
+			itemStats = {isGear = isGear, isSoulbound = isSoulbound}
+			cachedItemStats[item.itemID] = itemStats
+		end
+		item.isGear = itemStats.isGear
+		item.isSoulbound = itemStats.isSoulbound
+		
+		--Non-Cache
+		item.normalQuantity = item.quantity - (item.extraQuantity or 0)
+		
+		if bonusStats["multicraft"] then
+			if item.extraQuantity then
+				item.triggeredMulticraft = true
+				item.multicraftFactor = item.extraQuantity / item.normalQuantity
+			else
+				item.triggeredMulticraft = false
+				item.multicraftFactor = nil
+			end
 		end
 	end
 

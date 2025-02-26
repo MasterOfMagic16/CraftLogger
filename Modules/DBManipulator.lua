@@ -45,11 +45,6 @@ function CLEnable()
 	systemPrint("CraftLogger: Enabled DB.")
 end
 
-function CLResetReshapes()
-	VersionReshapes = {}
-	systemPrint("Reshapes Reset")
-end
-
 function CraftLogger.DBManipulator.RollingDataFalloff()
 	local craftCap = 250000 -- around 340k-400k actual cap, but want enough leeway
 	local removeCount = max(0, #CraftLoggerDB - craftCap)

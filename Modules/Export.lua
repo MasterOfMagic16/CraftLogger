@@ -2,8 +2,6 @@ local CraftLogger = select(2, ...)
 
 local GUTIL = CraftLogger.GUTIL
 
-print("Export Loaded")
-
 CraftLogger.Export = {}
 
 local CSDebug

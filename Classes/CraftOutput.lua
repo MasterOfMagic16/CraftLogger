@@ -51,7 +51,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	self.items = 
 		{{itemName = C_Item.GetItemNameByID(craftingItemResultData.itemID),
 		itemID = craftingItemResultData.itemID,
-		quality = craftingItemResultData.craftingQuality,
+		quality = C_TradeSkillUI.GetItemReagentQualityByItemInfo(craftingItemResultData.itemID), --craftingItemResultData.craftingQuality,
 		quantity = craftingItemResultData.quantity,
 		extraQuantity = (craftingItemResultData.multicraft ~= 0 and craftingItemResultData.multicraft) or nil,
 		}}

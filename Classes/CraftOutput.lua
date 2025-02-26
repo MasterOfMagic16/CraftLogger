@@ -122,10 +122,13 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 		end
 	end
 	
+	print("checkr")
+	
 	local salvageReagentSlot = recipeData.reagentData.salvageReagentSlot
 	local salvageReagent = salvageReagentSlot.activeItem
 	if salvageReagent then
-		local itemID = salvageReagent.item:GetItemID()
+		print("checkr2")
+		local itemID = salvageReagent:GetItemID()
 		
 		local craftingResourceReturnInfo = GUTIL:Find(
 			craftingItemResultData.resourcesReturned, 
@@ -134,6 +137,8 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 			end) 
 			or {}
 			
+		print("checkr3")
+		
 		local isOrderReagentIn = false
 		if recipeData.orderData then
 			local orderReagent = GUTIL:Find(recipeData.orderData.reagents or {},
@@ -145,10 +150,14 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 			end
 		end
 		
+		print("checkr4")
+		
 		local quality = C_TradeSkillUI.GetItemReagentQualityByItemInfo(itemID)
 
+		print("checkr5")
+		
 		table.insert(self.reagents, {
-			itemName = salvageReagent.item:GetItemName(),
+			itemName = salvageReagent:GetItemName(),
 			itemID = itemID,
 			quality = quality,
 			quantity = salvageReagentSlot.requiredQuantity,

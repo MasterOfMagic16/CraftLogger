@@ -25,6 +25,7 @@ end
 local accumulatingCraftOutputData = {}
 local isAccumulatingCraftOutputData = true
 function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultData)
+	table.insert(CLTest, craftingItemResultData)
 	local recipeData = CraftLogger.Logger.currentRecipeData
 	
 	--Filter Conditions
@@ -50,8 +51,8 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 	end
 	
 	if recipeData.isSalvageRecipe then
-		systemPrint("CraftLogger: Currently Does Not Support Salvage Recipes.")
-		return
+		--systemPrint("CraftLogger: Currently Does Not Support Salvage Recipes.")
+		--return
 	end
 	
 	if recipeData.isQuestRecipe then
@@ -95,6 +96,8 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
 	accumulatedCraftOutput.items = {}
 	
+	print("check2")
+	
 	for _, craftOutput in pairs(collectedCraftOutputData) do
 		local item = craftOutput.items[1]
 		local matchItem = GUTIL:Find(accumulatedCraftOutput.items, function(i) return i.itemID == item.itemID end)
@@ -103,9 +106,11 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 		else
 			table.insert(accumulatedCraftOutput.items, item)
 		end
+		print("check3")
 	end
 
 	--Verify Output is Clean For CraftLoggerDB
+	print("check4")
 	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()

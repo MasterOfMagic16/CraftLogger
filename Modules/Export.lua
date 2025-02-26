@@ -92,8 +92,6 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 		table.insert(columns, title .. " Consumed Quantity")
 	end
 	
-	print("Check")
-	
 	--Generate CSV
 	local csvTable = {table.concat(columns, ",")}
 	local row = {}

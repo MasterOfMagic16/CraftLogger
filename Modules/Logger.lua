@@ -25,7 +25,6 @@ end
 local accumulatingCraftOutputData = {}
 local isAccumulatingCraftOutputData = true
 function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultData)
-	table.insert(CLTest, craftingItemResultData)
 	local recipeData = CraftLogger.Logger.currentRecipeData
 	
 	--Filter Conditions
@@ -91,12 +90,8 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 
 	--The only lag error is quantity
 	
-	print("check")
-	
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
 	accumulatedCraftOutput.items = {}
-	
-	print("check2")
 	
 	for _, craftOutput in pairs(collectedCraftOutputData) do
 		local item = craftOutput.items[1]
@@ -106,11 +101,8 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 		else
 			table.insert(accumulatedCraftOutput.items, item)
 		end
-		print("check3")
 	end
 
-	--Verify Output is Clean For CraftLoggerDB
-	print("check4")
 	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()

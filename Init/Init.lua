@@ -37,7 +37,6 @@ end
 --Mirrors CraftSim with extra handling
 function CraftLogger.INIT:InitCraftRecipeHooks()
 	local function OnCraft(onCraftTable)
-		CLTest = {}
 		CraftLogger.Logger.recipeDataFresh = false
 		
 		local recipeData = CraftSimAPI:GetRecipeData({

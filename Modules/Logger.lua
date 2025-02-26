@@ -49,11 +49,6 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 		return
 	end
 	
-	if recipeData.isSalvageRecipe then
-		systemPrint("CraftLogger: Currently Does Not Support Salvage Recipes.")
-		return
-	end
-	
 	if recipeData.isQuestRecipe then
 		systemPrint("CraftLogger: Does Not Track Quest Recipes.")
 		return
@@ -66,12 +61,6 @@ function CraftLogger.Logger:TRADE_SKILL_ITEM_CRAFTED_RESULT(craftingItemResultDa
 	
 	if CraftLogger.Logger.craftAbleAmountRemaining < 1 then
 		systemPrint("CraftLogger: Does Not Track CraftAmounts Beyond Initial Craftable Amount Due To ReagentData Errors.")
-		return
-	end
-
-	local possibleItems = recipeData.resultData.itemsByQuality
-	if not GUTIL:Find(possibleItems, function(i) return i:GetItemID() == craftingItemResultData.itemID end) then
-		systemPrint("CraftLogger: Failed. Item Created Is Not Possible With Current RecipeData.")
 		return
 	end
 	--End Filter Conditions
@@ -96,17 +85,17 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 
 	--The only lag error is quantity
 	local accumulatedCraftOutput = collectedCraftOutputData[1]:Copy()
-	accumulatedCraftOutput.item.quantity = 0
-	local craftedItemID = accumulatedCraftOutput.item.itemID
+	accumulatedCraftOutput.items = {}
 	for _, craftOutput in pairs(collectedCraftOutputData) do
-		if craftOutput.item.itemID ~= craftedItemID then
-			systemPrint("CraftLogger: Currently Does Not Support Multiple Items Output.")
-			return
-		end	
-		accumulatedCraftOutput.item.quantity = accumulatedCraftOutput.item.quantity + craftOutput.item.quantity
+		local item = craftOutput.items[1]
+		local matchItem = GUTIL:Find(accumulatedCraftOutput.items, function(i) return i.itemID == item.itemID end)
+		if matchItem then
+			matchItem.quantity = matchItem.quantity + item.quantity
+		else
+			table.insert(accumulatedCraftOutput.items, item)
+		end
 	end
 
-	--Verify Output is Clean For CraftLoggerDB
 	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()

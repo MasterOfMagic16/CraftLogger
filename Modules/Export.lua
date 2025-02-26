@@ -19,11 +19,13 @@ end
 function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 	--Get Columns
 	--Prep Variable Columns
+	local maxItems = 0
 	local maxReagentTypes = 0
 	local maxOptionalReagentTypes = 0
 	for _, craftOutput in ipairs(craftOutputs) do
-		maxOptionalReagentTypes = max(maxOptionalReagentTypes, #craftOutput.optionalReagents)
+		maxItems = max(maxItems, #craftOutput.items)
 		maxReagentTypes = max(maxReagentTypes, #craftOutput.reagents)
+		maxOptionalReagentTypes = max(maxOptionalReagentTypes, #craftOutput.optionalReagents)
 	end
 	
 	--Set Columns & Order
@@ -35,22 +37,13 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 		"Crafter UID",
 		"Work Order",
 		"Recraft",
-		"Gear",
-		"Item Level",
-		"Soulbound",
+		"Salvage",
 		"Old World Recipe",
 		"Expansion",
 		"Profession",
 		"Category Name",
 		"Recipe Name",
 		"Enchanting Target Name",
-		"Item Name",
-		"Item Quality",
-		"Normal Quantity",
-		"Produced Quantity",
-		"Extra Quantity",
-		"Triggered Multicraft",
-		"Multicraft Factor",
 		"Concentrating",
 		"Concentration Spent",
 		"Concentration Refunded",
@@ -63,6 +56,20 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 		table.insert(columns, bonusStatName .. " Value")
 		table.insert(columns, bonusStatName .. " Percent")
 		table.insert(columns, bonusStatName .. " Bonus")
+	end
+	
+	for i = 1, maxItems do
+		local title = "Item " .. i 
+		table.insert(columns, title .. " Name")
+		table.insert(columns, title .. " Quality")
+		table.insert(columns, title .. " Normal Quantity")
+		table.insert(columns, title .. " Produced Quantity")
+		table.insert(columns, title .. " Extra Quantity")
+		table.insert(columns, title .. " Triggered Multicraft")
+		table.insert(columns, title .. " Multicraft Factor")
+		table.insert(columns, title .. " Gear")
+		table.insert(columns, title .. " Item Level")
+		table.insert(columns, title .. " Soulbound")
 	end
 	
 	for i = 1, maxReagentTypes do
@@ -83,6 +90,7 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 		table.insert(columns, title .. " Provided By Customer")
 		table.insert(columns, title .. " Consumed Quantity")
 	end
+	
 	--Generate CSV
 	local csvTable = {table.concat(columns, ",")}
 	local row = {}
@@ -111,9 +119,7 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Crafter UID"] = craftOutput.crafterUID,
 		["Work Order"] = craftOutput.isWorkOrder,
 		["Recraft"] = craftOutput.isRecraft,
-		["Gear"] = craftOutput.isGear,
-		["Item Level"] = craftOutput.itemLevel,
-		["Soulbound"] = craftOutput.isSoulbound,
+		["Salvage"] = craftOutput.isSalvageRecipe,
 		["Old World Recipe"] = craftOutput.isOldWorldRecipe,
 		["Expansion"] = craftOutput.expansionName,
 		["Profession"] = craftOutput.profession,
@@ -123,14 +129,6 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Recipe Name"] = craftOutput.recipeName,
 		["Enchanting Target ID"] = craftOutput.enchantTargetItemID,
 		["Enchanting Target Name"] = craftOutput.enchantTargetItemName,
-		["Item ID"] = craftOutput.item.itemID,
-		["Item Name"] = craftOutput.item.itemName,
-		["Item Quality"] = craftOutput.item.quality,
-		["Normal Quantity"] = craftOutput.item.normalQuantity,
-		["Produced Quantity"] = craftOutput.item.quantity,
-		["Extra Quantity"] = craftOutput.item.extraQuantity,
-		["Triggered Multicraft"] = craftOutput.item.triggeredMulticraft,
-		["Multicraft Factor"] = craftOutput.item.multicraftFactor,
 		["Concentrating"] = craftOutput.concentration.concentrating,
 		["Concentration Spent"] = craftOutput.concentration.concentrationSpent,
 		["Concentration Refunded"] = craftOutput.concentration.ingenuityRefund,
@@ -138,6 +136,21 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		["Resourcefulness-Eligible Reagent Types Used"] = craftOutput.typesUsed,
 		["Resourcefulness-Eligible Reagent Types Returned"] = craftOutput.typesReturned,
 		}
+		
+	for i = 1, #craftOutput.items do
+		local item = craftOutput.items[i]
+		local title = "Item " .. i 
+		map[title .. " Name"] = item.itemName
+		map[title .. " Quality"] = item.quality
+		map[title .. " Normal Quantity"] = item.normalQuantity
+		map[title .. " Produced Quantity"] = item.quantity 
+		map[title .. " Extra Quantity"] = item.extraQuantity
+		map[title .. " Triggered Multicraft"] = item.triggeredMulticraft 
+		map[title .. " Multicraft Factor"] = item.multicraftFactor 
+		map[title .. " Gear"] = item.isGear 
+		map[title .. " Item Level"] = item.itemLevel 
+		map[title .. " Soulbound"] = item.isSoulbound
+	end
 		
 	for i = 1, #craftOutput.reagents do
 		local reagent = craftOutput.reagents[i]

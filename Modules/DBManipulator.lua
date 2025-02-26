@@ -77,6 +77,11 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 				end
 				craftOutput.itemLevel = nil
 			end
+			
+			--Salvage Category
+			if craftOutput.isSalvageRecipe == nil then
+				craftOutput.isSalvageRecipe = false
+			end
 		end
 		VersionReshapes["0.2.0"] = true
 	end

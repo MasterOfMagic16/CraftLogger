@@ -42,6 +42,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	self.recipeName = recipeData.recipeName
 	self.isWorkOrder = recipeData:IsWorkOrder()
 	self.isRecraft = recipeData.isRecraft
+	self.isSalvageRecipe = recipeData.isSalvageRecipe
 	self.enchantTargetItemID = recipeData.enchantTargetItemID
 	if self.enchantTargetItemID then 
 		self.enchantTargetItemName = C_Item.GetItemNameByID(recipeData.enchantTargetItemID)

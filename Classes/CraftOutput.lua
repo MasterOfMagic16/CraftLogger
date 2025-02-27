@@ -78,9 +78,13 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	end
 		
 	--Reagent Data
-	craftingItemResultData.resourcesReturned = craftingItemResultData.resourcesReturned or {}
+	--Resourcefulness Eligible
+	self.reagents = {} 
+	--Not Resourcefulness Eligible
+	self.optionalReagents = {}	
 	
-	self.reagents = {}
+	craftingItemResultData.resourcesReturned = craftingItemResultData.resourcesReturned or {}
+		
 	for _, reagent in pairs(recipeData.reagentData.requiredReagents) do
 		for _, reagentItem in pairs(reagent.items) do
 			local itemID = reagentItem.item:GetItemID()
@@ -111,14 +115,21 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 					quality = reagentItem.qualityID
 				end
 				
-				table.insert(self.reagents, {
+				local reagentInsert = {
 					itemName = reagentItem.item:GetItemName(),
 					itemID = itemID,
 					quality = quality,
 					quantity = reagentItem.quantity,
 					quantityReturned = craftingResourceReturnInfo.quantity,
 					isOrderReagentIn = reagentItem:IsOrderReagentIn(recipeData),
-					})
+					}
+				
+				--Artisan's Acuity Move
+				if reagentInsert.itemID == 210814 then 
+					table.insert(self.optionalReagents, reagentInsert)
+				else
+					table.insert(self.reagents, reagentInsert)
+				end
 			end
 		end
 	end
@@ -164,7 +175,6 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 		})
 	table.insert(optionalSlots, recipeData.reagentData.requiredSelectableReagentSlot)
 	
-	self.optionalReagents = {}	
 	for _, optionalReagentSlot in pairs(optionalSlots) do
 		optionalReagentSlot = optionalReagentSlot or {}
 		local optionalReagent = optionalReagentSlot.activeReagent

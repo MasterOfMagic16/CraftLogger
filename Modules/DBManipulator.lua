@@ -82,6 +82,19 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 			if craftOutput.isSalvageRecipe == nil then
 				craftOutput.isSalvageRecipe = false
 			end
+
+			--Move Artisans Acuity
+			for index, reagent in ipairs(craftOutput.reagents) do
+				if reagent.itemID == 210814 and not GUTIL:Find(craftOutput.optionalReagents, function(r) return r.itemID == 210814 end) then
+					table.insert(craftOutput.optionalReagents, 1, reagent)
+					
+					local function removefunc(input, funcindex)
+						return funcindex == index 
+					end
+				
+					CraftLogger.UTIL:RemoveFromTable(craftOutput.reagents, removefunc)
+				end
+			end	
 		end
 		VersionReshapes["0.2.0"] = true
 	end

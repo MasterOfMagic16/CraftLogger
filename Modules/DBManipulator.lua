@@ -95,6 +95,11 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 					CraftLogger.UTIL:RemoveFromTable(craftOutput.reagents, removefunc)
 				end
 			end	
+			
+			--Version Issue 0.1.0 was 1.0.0
+			if craftOutput.craftLoggerVersion == "1.0.0" then
+				craftOutput.craftLoggerVersion = "0.1.0"
+			end
 		end
 		VersionReshapes["0.2.0"] = true
 	end

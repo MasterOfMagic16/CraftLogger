@@ -85,7 +85,7 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 
 			--Move Artisans Acuity
 			for index, reagent in ipairs(craftOutput.reagents) do
-				if reagent.itemID == 210814 and not GUTIL:Find(craftOutput.optionalReagents, function(r) return r.itemID == 210814 end) then
+				if reagent.itemID == 210814 then
 					table.insert(craftOutput.optionalReagents, 1, reagent)
 					
 					local function removefunc(input, funcindex)

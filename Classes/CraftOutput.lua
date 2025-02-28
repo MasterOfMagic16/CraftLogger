@@ -81,7 +81,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 	--Resourcefulness Eligible
 	self.reagents = {} 
 	--Not Resourcefulness Eligible
-	self.optionalReagents = {}	
+	self.specialReagents = {}	
 	
 	craftingItemResultData.resourcesReturned = craftingItemResultData.resourcesReturned or {}
 		
@@ -126,7 +126,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 				
 				--Artisan's Acuity Move
 				if reagentInsert.itemID == 210814 then 
-					table.insert(self.optionalReagents, reagentInsert)
+					table.insert(self.specialReagents, reagentInsert)
 				else
 					table.insert(self.reagents, reagentInsert)
 				end
@@ -193,7 +193,7 @@ function CraftLogger.CraftOutput:Generate(recipeData, craftingItemResultData)
 				quality = optionalReagent.qualityID
 			end
 
-			table.insert(self.optionalReagents, {
+			table.insert(self.specialReagents, {
 				itemName = optionalReagent.item:GetItemName(),
 				itemID = itemID,
 				quality = quality,
@@ -235,7 +235,7 @@ function CraftLogger.CraftOutput:Printing()
 	
 	local allReagents = GUTIL:Concat({
 		self.reagents,
-		self.optionalReagents,
+		self.specialReagents,
 		})
 	
 	for _, reagent in pairs(allReagents) do

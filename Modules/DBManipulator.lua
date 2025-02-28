@@ -61,12 +61,16 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 	if not VersionReshapes["0.2.0"] then
 		for _, craftOutput in pairs(CraftLoggerDB) do
 			
+			print("CheckL")
+			
 			--Array to Key-Value for bonusStats
 			for key, bonusStat in ipairs(craftOutput.bonusStats) do
 				craftOutput.bonusStats[bonusStat.bonusStatName] = bonusStat
 				craftOutput.bonusStats[bonusStat.bonusStatName].bonusStatName = nil
 				craftOutput.bonusStats[key] = nil
 			end
+			
+			print("CheckL2")
 			
 			--Item to Items list
 			if craftOutput.item then
@@ -78,11 +82,15 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 				craftOutput.itemLevel = nil
 			end
 			
+			print("CheckL3")
+			
 			--Salvage Category
 			if craftOutput.isSalvageRecipe == nil then
 				craftOutput.isSalvageRecipe = false
 			end
 
+			print("CheckL4")
+			
 			--Move Artisans Acuity
 			for index, reagent in ipairs(craftOutput.reagents) do
 				if reagent.itemID == 210814 then
@@ -96,9 +104,19 @@ function CraftLogger.DBManipulator:ReshapeByVersion()
 				end
 			end	
 			
+			print("Check0")
+			
 			--Version Issue 0.1.0 was 1.0.0
 			if craftOutput.craftLoggerVersion == "1.0.0" then
 				craftOutput.craftLoggerVersion = "0.1.0"
+			end
+			
+			print("Check")
+			
+			--Rename optionalReagents to specialReagents
+			if craftOutput.optionalReagents then
+				craftOutput.specialReagents = craftOutput.optionalReagents
+				craftOutput.optionalReagents = nil
 			end
 		end
 		VersionReshapes["0.2.0"] = true

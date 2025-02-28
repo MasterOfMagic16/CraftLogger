@@ -20,14 +20,10 @@ function CraftLogger.Export:GetCraftOutputListCSV(craftOutputs)
 	--Get Columns
 	--Prep Variable Columns
 	local maxItems = 0
-	local maxRequiredReagentTypes = 0
-	local maxOptionalReagentTypes = 0
 	local maxReagentTypes = 0
 	for _, craftOutput in ipairs(craftOutputs) do
 		maxItems = max(maxItems, #craftOutput.items)
-		maxRequiredReagentTypes = max(maxRequiredReagentTypes, #craftOutput.reagents)
-		maxOptionalReagentTypes = max(maxOptionalReagentTypes, #craftOutput.optionalReagents)
-		maxReagentTypes = max(maxReagentTypes, #craftOutput.reagents + #craftOutput.optionalReagents)
+		maxReagentTypes = max(maxReagentTypes, #craftOutput.reagents + #craftOutput.specialReagents)
 	end
 	
 	--Set Columns & Order
@@ -146,7 +142,7 @@ function CraftLogger.Export:PrepareCraftOutputMap(craftOutput)
 		map[title .. " Soulbound"] = item.isSoulbound
 	end
 	
-	local allReagents = GUTIL:Concat({craftOutput.reagents, craftOutput.optionalReagents})
+	local allReagents = GUTIL:Concat({craftOutput.reagents, craftOutput.specialReagents})
 		
 	for i = 1, #allReagents do
 		local reagent = allReagents[i]

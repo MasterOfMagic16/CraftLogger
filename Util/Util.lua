@@ -6,13 +6,6 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.UTIL = {}
 
-CraftLogger.UTIL.frameLevel = 100
-
-function CraftLogger.UTIL:NextFrameLevel()
-	local frameLevel = CraftLogger.UTIL.frameLevel
-    CraftLogger.UTIL.frameLevel = CraftLogger.UTIL.frameLevel + 50
-    return frameLevel
-end
 
 local print
 function CraftLogger.UTIL:Init()

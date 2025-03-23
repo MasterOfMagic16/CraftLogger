@@ -9,8 +9,9 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CreateAllWithReagentsButton = {}
 
---Issue with possible differences in RecipeData for the craft command
---Can text be dynamic?
+--Need to verify accuracy
+--This will trigger what simulation mode has
+--If zero, gray out
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
@@ -21,11 +22,16 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 	local function Update()
 		--Parameters
 		recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
-		craftableAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
+		craftableAmount = recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID())
 		
 		--Text Update
-		local text = "Create All With Reagents [" .. (craftableAmount or "Err") .. "]"
+		local text = "Create All With Reagents [" .. tostring(craftableAmount) .. "]"
 		CraftLogger.CreateAllWithReagentsButton.Button:SetText(text)
+		
+		C_Timer.After(.01, function()
+			local enabled = ProfessionsFrame.CraftingPage.CreateAllButton:IsEnabled()
+			CraftLogger.CreateAllWithReagentsButton.Button:SetEnabled(enabled)
+			end)
 	end
 	hooksecurefunc(CraftSimAPI:GetCraftSim().INIT, "TriggerModulesByRecipeType", Update)
 	
@@ -40,7 +46,7 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 		label = "Create All With Reagents [    ]",
         tooltipOptions = {
             anchor = "ANCHOR_CURSOR_RIGHT",
-            text = "Create All Using Only Current Reagent Configuration",
+            text = "CraftLogger:\nCreate All Using Only The Current Reagent Configuration\n(Will Use Simulation Mode If Applicable)",
         },
         clickCallback = function() recipeData:Craft(craftableAmount) end,
     }

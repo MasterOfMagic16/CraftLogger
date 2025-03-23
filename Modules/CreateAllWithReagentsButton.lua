@@ -44,7 +44,7 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 		end
 		
 		--Text Update
-		local text = "Create All With Reagents [" .. tostring(craftableAmount) .. "]"
+		local text = "CraftLogger: Create All [" .. tostring(craftableAmount) .. "]"
 		CraftLogger.CreateAllWithReagentsButton.Button:SetText(text)
 		
 		C_Timer.After(.01, function()
@@ -62,10 +62,10 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
             anchorA = "RIGHT", anchorB = "LEFT", offsetX = -10,
         } },
         adjustWidth = true,
-		label = "Create All With Reagents [    ]",
+		label = "CraftLogger: Create All [    ]",
         tooltipOptions = {
             anchor = "ANCHOR_CURSOR_RIGHT",
-            text = "CraftLogger:\nCreate All Using Only The Current Reagent Configuration\nWill Craft With Simulation Mode If Active",
+            text = "Create All Using Only The Current Reagent Configuration\nWill Craft With Simulation Mode If Active",
         },
         clickCallback = function() recipeData:Craft(craftableAmount) end,
     }

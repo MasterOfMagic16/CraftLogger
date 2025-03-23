@@ -11,7 +11,7 @@ CraftLogger.CreateAllWithReagentsButton = {}
 
 --Need to verify accuracy
 --This will trigger what simulation mode has
---If zero, gray out
+--required selectable reagent issue
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
@@ -23,6 +23,29 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 		--Parameters
 		recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
 		craftableAmount = recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID())
+		
+		
+		--Implement Salvage as well
+		if recipeData.isSalvageRecipe then
+			local reagentData = recipeData.reagentData
+			local salvageReagentSlot = reagentData.salvageReagentSlot
+			
+			local function hasQuantityXTimes(crafterUID)
+				if not salvageReagentSlot.activeItem then 
+					return 0
+				end 
+				
+				local itemID = salvageReagentSlot.activeItem:GetItemID()
+				local itemCount = CraftSimAPI:GetCraftSim().CRAFTQ:GetItemCountFromCraftQueueCache(crafterUID, itemID)
+				local itemFitCount = math.floor(itemCount / salvageReagentSlot.requiredQuantity)
+				
+				return itemFitCount
+			end
+			
+			local crafterUID = recipeData:GetCrafterUID()
+			local itemFitCount = hasQuantityXTimes(crafterUID)
+			craftableAmount = math.min(itemFitCount, craftableAmount)
+		end
 		
 		--Text Update
 		local text = "Create All With Reagents [" .. tostring(craftableAmount) .. "]"

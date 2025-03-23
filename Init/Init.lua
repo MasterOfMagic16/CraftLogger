@@ -103,9 +103,33 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 
 		recipeData:Update()
 		
+		local craftAbleAmount = recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID())
+		
+		--Salvage CraftAble Amount handling
+		if recipeData.isSalvageRecipe then
+			local reagentData = recipeData.reagentData
+			local salvageReagentSlot = reagentData.salvageReagentSlot
+			
+			local function hasQuantityXTimes(crafterUID)
+				if not salvageReagentSlot.activeItem then 
+					return 0
+				end 
+				
+				local itemID = salvageReagentSlot.activeItem:GetItemID()
+				local itemCount = CraftSimAPI:GetCraftSim().CRAFTQ:GetItemCountFromCraftQueueCache(crafterUID, itemID)
+				local itemFitCount = math.floor(itemCount / salvageReagentSlot.requiredQuantity)
+				
+				return itemFitCount
+			end
+			
+			local crafterUID = recipeData:GetCrafterUID()
+			local itemFitCount = hasQuantityXTimes(crafterUID)
+			craftAbleAmount = math.min(itemFitCount, craftAbleAmount)
+		end
+		
 		--Some recipes like recraft have pre-filled reagents, and so evaluate as 0 craftable.
 		--However, I've only seen these craftable one at a time, so craftableAmount = 1
-		local craftAbleAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
+		craftAbleAmount = max(1, craftAbleAmount)
 		if (onCraftTable.amount - craftAbleAmount) > 0 then
 			systemPrint("CraftLogger: Tracking Will Stop After " .. max(0, craftAbleAmount) .. " Crafts Due To Craft Amount Command > Craftable Amount.")
 		end

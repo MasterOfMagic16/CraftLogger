@@ -29,5 +29,4 @@ Classes/CraftOutputList.lua
 Modules/Logger.lua
 Modules/Export.lua
 Modules/DBManipulator.lua
-
 Modules/CreateAllWithReagentsButton.lua

@@ -20,45 +20,23 @@ function CLCraftTest()
 	recipeData:Craft(craftableAmount)
 end
 
+--Make it update craftable amount
+--Doesn't work for orders, but fine since one craft anyway
 function CraftLogger.CreateAllWithReagentsButton:Init()	
-	print("Initted")
-	local sizeX = 880
-	local sizeY = 420
+	CraftLogger.CreateAllWithReagentsButton.Button = GGUI.Button {
+		parent = ProfessionsFrame.CraftingPage.CreateAllButton,
+        anchorPoints = { {
+            anchorParent = ProfessionsFrame.CraftingPage.CreateAllButton,
+            anchorA = "RIGHT", anchorB = "LEFT", offsetX = -10,
+        } },
+        adjustWidth = true,
+        label = "Create All With Reagents []",
+        tooltipOptions = {
+            anchor = "ANCHOR_CURSOR_RIGHT",
+            text = "Create All Using Only Current Reagent Configuration",
+        },
+        clickCallback = function() CLCraftTest() end,
+    }
 	
-	local backdropOptions = {
-		bgFile = "Interface\\Buttons\\WHITE8X8",
-		borderOptions = {
-			edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-			edgeSize = 16,
-			insets = { left = 3, right = 3, top = 3, bottom = 3 },
-		},
-		colorR = 0,
-		colorG = 0,
-		colorB = 0,
-		colorA = 1,
-	}
-
-	print("CheckOT")
-	CraftLogger.CreateAllWithReagentsButton.frame = GGUI.Frame({
-		parent = ProfessionsFrame,
-		anchorParent = ProfessionsFrame,
-		sizeX = sizeX,
-		sizeY = sizeY,
-		frameID = "CreateAllWithReagentsButtonFrame",
-		title = "CRAFT_QUEUE_TITLE", --Possible Weirdness
-		collapseable = true,
-		closeable = true,
-		moveable = true,
-		backdropOptions = backdropOptions,
-		--onCloseCallback = CraftSim.CONTROL_PANEL:HandleModuleClose("MODULE_CRAFT_QUEUE"),
-		frameTable = CraftLogger.INIT.FRAMES,
-		frameConfigTable = {},
-		frameStrata = "HIGH",
-		raiseOnInteraction = true,
-		frameLevel = CraftLogger.UTIL:NextFrameLevel()
-	})
-	
-	CraftLogger.CreateAllWithReagentsButton.frame:Show()
-	
-	print("Check2")
+	CraftLogger.CreateAllWithReagentsButton.Button:Show()
 end

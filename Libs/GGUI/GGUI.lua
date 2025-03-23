@@ -449,7 +449,6 @@ GGUI.Frame = GGUI.Widget:extend()
 
 ---@param options GGUI.FrameConstructorOptions
 function GGUI.Frame:new(options)
-	print("GGUI Called")
     options = options or {}
     -- handle defaults
     options.anchorA = options.anchorA or "CENTER"
@@ -632,9 +631,6 @@ function GGUI.Frame:new(options)
 
     self.content = frame.content
     options.frameTable[self.frameID] = self
-	
-	print("Finished")
-	
     return frame
 end
 

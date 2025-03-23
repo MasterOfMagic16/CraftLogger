@@ -106,7 +106,7 @@ function CraftLogger.INIT:InitCraftRecipeHooks()
 		--However, I've only seen these craftable one at a time, so craftableAmount = 1
 		local craftAbleAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
 		if (onCraftTable.amount - craftAbleAmount) > 0 then
-			systemPrint("CraftLogger: Tracking Will Stop After " .. max(0, onCraftTable.amount - craftAbleAmount) .. " Crafts Due To Craft Amount Command > Craftable Amount.")
+			systemPrint("CraftLogger: Tracking Will Stop After " .. max(0, craftAbleAmount) .. " Crafts Due To Craft Amount Command > Craftable Amount.")
 		end
 		
 		CraftLogger.Logger:SetCraftableAmount(craftAbleAmount)

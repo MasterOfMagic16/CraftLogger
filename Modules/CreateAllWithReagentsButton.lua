@@ -9,9 +9,9 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CreateAllWithReagentsButton = {}
 
---Add Further Updates, on open, on reagent allocation change
 --Address issues with recipedata generation same time as craftsim 
 --Get function to update?
+--Concentration doesn't trigger update
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
@@ -20,6 +20,7 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 	local craftableAmount
 	
 	local function Init()
+		print("Init Called")
 		recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
 		craftableAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
 		local text = "Create All With Reagents [" .. (craftableAmount or "Err") .. "]"
@@ -45,6 +46,16 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 	
 	local hookFrame = ProfessionsFrame.CraftingPage.SchematicForm
 	hooksecurefunc(hookFrame, "Init", Init)
+	
+	hookFrame:RegisterCallback(ProfessionsRecipeSchematicFormMixin.Event.AllocationsModified, Init)
+	hookFrame:RegisterCallback(ProfessionsRecipeSchematicFormMixin.Event.UseBestQualityModified, Init)
+
+	local recipeTab = ProfessionsFrame.TabSystem.tabs[1]
+
+	recipeTab:HookScript("OnClick", Init)
+	
+	ProfessionsFrame.CraftingPage.SchematicForm.Details.CraftingChoicesContainer.ConcentrateContainer
+		.ConcentrateToggleButton:HookScript("OnClick", Init)
 	
 	CraftLogger.CreateAllWithReagentsButton.Button:Show()
 	

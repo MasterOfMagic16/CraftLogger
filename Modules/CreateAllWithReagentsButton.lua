@@ -1,7 +1,5 @@
 local CraftLogger = select(2, ...)
 
-print("Loaded")
-
 local systemPrint = print
 
 local GGUI = CraftLogger.GGUI
@@ -10,8 +8,6 @@ local GUTIL = CraftLogger.GUTIL
 CraftLogger.CreateAllWithReagentsButton = {}
 
 --Need to verify accuracy
---This will trigger what simulation mode has
---required selectable reagent issue
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
@@ -69,7 +65,7 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
 		label = "Create All With Reagents [    ]",
         tooltipOptions = {
             anchor = "ANCHOR_CURSOR_RIGHT",
-            text = "CraftLogger:\nCreate All Using Only The Current Reagent Configuration\n(Will Use Simulation Mode If Applicable)",
+            text = "CraftLogger:\nCreate All Using Only The Current Reagent Configuration\nWill Craft With Simulation Mode If Active",
         },
         clickCallback = function() recipeData:Craft(craftableAmount) end,
     }

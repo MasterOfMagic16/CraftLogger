@@ -9,24 +9,27 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CreateAllWithReagentsButton = {}
 
---Address issues with recipedata generation same time as craftsim 
---Get function to update?
---Concentration doesn't trigger update
+--Issue with possible differences in RecipeData for the craft command
+--Can text be dynamic?
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
-	
-	local recipeData
-	local craftableAmount
-	
-	local function Init()
-		print("Init Called")
+
+	--Hook 
+	local recipeData 
+	local craftableAmount 
+	local function Update()
+		--Parameters
 		recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
 		craftableAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
+		
+		--Text Update
 		local text = "Create All With Reagents [" .. (craftableAmount or "Err") .. "]"
 		CraftLogger.CreateAllWithReagentsButton.Button:SetText(text)
 	end
-
+	hooksecurefunc(CraftSimAPI:GetCraftSim().INIT, "TriggerModulesByRecipeType", Update)
+	
+	--Frame
 	CraftLogger.CreateAllWithReagentsButton.Button = GGUI.Button{
 		parent = ProfessionsFrame.CraftingPage.CreateAllButton,
         anchorPoints = { {
@@ -41,23 +44,8 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
         },
         clickCallback = function() recipeData:Craft(craftableAmount) end,
     }
-	
-	Button = CraftLogger.CreateAllWithReagentsButton.Button
-	
-	local hookFrame = ProfessionsFrame.CraftingPage.SchematicForm
-	hooksecurefunc(hookFrame, "Init", Init)
-	
-	hookFrame:RegisterCallback(ProfessionsRecipeSchematicFormMixin.Event.AllocationsModified, Init)
-	hookFrame:RegisterCallback(ProfessionsRecipeSchematicFormMixin.Event.UseBestQualityModified, Init)
-
-	local recipeTab = ProfessionsFrame.TabSystem.tabs[1]
-
-	recipeTab:HookScript("OnClick", Init)
-	
-	ProfessionsFrame.CraftingPage.SchematicForm.Details.CraftingChoicesContainer.ConcentrateContainer
-		.ConcentrateToggleButton:HookScript("OnClick", Init)
-	
 	CraftLogger.CreateAllWithReagentsButton.Button:Show()
-	
+
+	--Finish
 	initialized = true
 end

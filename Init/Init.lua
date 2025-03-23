@@ -6,6 +6,8 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.INIT = GUTIL:CreateRegistreeForEvents ({ "PLAYER_LOGIN" })
 
+CraftLogger.INIT.Frames = {}
+
 --Initialize Saved Non-DB Variables
 CraftLoggerDBSettings = CraftLoggerDBSettings or {enabled = true}
 
@@ -25,6 +27,7 @@ function CraftLogger.INIT:PLAYER_LOGIN()
 		CraftLogger.Logger:Init()
 		CraftLogger.DBManipulator:Init()
 		CraftLogger.Export:Init()
+		CraftLogger.CreateAllWithReagentsButton:Init()
 		
 		--Craft Hooks
 		CraftLogger.INIT:InitCraftRecipeHooks()

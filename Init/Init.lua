@@ -25,6 +25,7 @@ function CraftLogger.INIT:PLAYER_LOGIN()
 		CraftLogger.Logger:Init()
 		CraftLogger.DBManipulator:Init()
 		CraftLogger.Export:Init()
+		CraftLogger.CreateAllWithReagentsButton:Init()
 		
 		--Craft Hooks
 		CraftLogger.INIT:InitCraftRecipeHooks()

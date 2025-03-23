@@ -9,26 +9,31 @@ local GUTIL = CraftLogger.GUTIL
 
 CraftLogger.CreateAllWithReagentsButton = {}
 
+--Add Further Updates, on open, on reagent allocation change
+--Address issues with recipedata generation same time as craftsim 
+--Get function to update?
 local initialized = false
 function CraftLogger.CreateAllWithReagentsButton:Init()
 	if initialized then return end
 	
+	local recipeData
 	local craftableAmount
-
+	
 	local function Init()
-		local recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
+		recipeData = CraftSimAPI:GetCraftSim().INIT.currentRecipeData:Copy()
 		craftableAmount = max(1, recipeData.reagentData:GetCraftableAmount(recipeData:GetCrafterUID()))
-		CraftLogger.CreateAllWithReagentsButton.Button.label = "Create All With Reagents [" .. craftableAmount .. "]"
+		local text = "Create All With Reagents [" .. (craftableAmount or "Err") .. "]"
+		CraftLogger.CreateAllWithReagentsButton.Button:SetText(text)
 	end
 
-	CraftLogger.CreateAllWithReagentsButton.Button = GGUI.Button {
+	CraftLogger.CreateAllWithReagentsButton.Button = GGUI.Button{
 		parent = ProfessionsFrame.CraftingPage.CreateAllButton,
         anchorPoints = { {
             anchorParent = ProfessionsFrame.CraftingPage.CreateAllButton,
             anchorA = "RIGHT", anchorB = "LEFT", offsetX = -10,
         } },
         adjustWidth = true,
-		label = "Create All With Reagents []",
+		label = "Create All With Reagents [    ]",
         tooltipOptions = {
             anchor = "ANCHOR_CURSOR_RIGHT",
             text = "Create All Using Only Current Reagent Configuration",
@@ -37,8 +42,6 @@ function CraftLogger.CreateAllWithReagentsButton:Init()
     }
 	
 	Button = CraftLogger.CreateAllWithReagentsButton.Button
-	
-	Init()
 	
 	local hookFrame = ProfessionsFrame.CraftingPage.SchematicForm
 	hooksecurefunc(hookFrame, "Init", Init)

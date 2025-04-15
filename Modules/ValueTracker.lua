@@ -11,7 +11,7 @@ CraftLogger.ValueTracker = GUTIL:CreateRegistreeForEvents({ "AUCTION_HOUSE_SHOW_
 CLItemsTracked = {}
 
 function CraftLogger.ValueTracker:AUCTION_HOUSE_SHOW_COMMODITY_WON_NOTIFICATION(commodityName, commodityQuantity)
-	print("Triggered")
+	print("Triggered Add Item")
 	
 	itemTracker = GUTIL:Find(CLItemsTracked, function(itemTracker) return itemTracker.name == commodityName end)
 	if itemTracker then
@@ -21,3 +21,12 @@ function CraftLogger.ValueTracker:AUCTION_HOUSE_SHOW_COMMODITY_WON_NOTIFICATION(
 		table.insert(CLItemsTracked, itemTracker)
 	end
 end
+
+--craftOutput should have all stats set after addition to CraftLoggerDB
+function CraftLogger.ValueTracker:TransferCraftValue(craftOutput)
+	print("Triggered TransferCraftValue")
+end
+
+
+--TSM_API.GetCustomPriceValue(minBuyoutPriceSourceKey, tsmItemString)
+--TSM_API.ToItemString(recipeData.resultData.expectedItem:GetItemLink())

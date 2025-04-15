@@ -26,6 +26,8 @@ function CraftLogger.ItemTracker:Add(quantity, price)
 	
 	self.quantity = self.quantity + quantity 
 	self.value = self.value + gainedValue
+	
+	return gainedValue
 end
 
 function CraftLogger.ItemTracker:Subtract(quantity)
@@ -33,4 +35,6 @@ function CraftLogger.ItemTracker:Subtract(quantity)
 	
 	self.quantity = self.quantity - quantity 
 	self.value = self.value - lostValue
+	
+	return lostValue
 end

@@ -32,4 +32,5 @@ Modules/DBManipulator.lua
 Modules/CreateAllWithReagentsButton.lua
 
 Classes/ItemTracker.lua
+Classes/Inventory.lua
 Modules/ValueTracker.lua

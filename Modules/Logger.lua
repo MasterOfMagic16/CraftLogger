@@ -99,7 +99,6 @@ function CraftLogger.Logger:AccumulateCraftOutputs()
 	CraftLoggerDB:InsertLoggerCraftOutput(accumulatedCraftOutput)
 	systemPrint("CraftLogger: Added To DB")
 	accumulatedCraftOutput:Printing()
-	CraftLogger.ValueTracker:TransferCraftValue(accumulatedCraftOutput)
 	
 	--Issue Handling for cast amount > 1
 	CraftLogger.Logger.craftAbleAmountRemaining = CraftLogger.Logger.craftAbleAmountRemaining - 1

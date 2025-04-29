@@ -24,6 +24,7 @@ function CraftLogger.INIT:PLAYER_LOGIN()
 		CraftLogger.CraftOutput:Init()
 		CraftLogger.Logger:Init()
 		CraftLogger.DBManipulator:Init()
+		CraftLogger.ValueTracker:Init()
 		CraftLogger.Export:Init()
 		CraftLogger.CreateAllWithReagentsButton:Init()
 		

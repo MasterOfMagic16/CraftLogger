@@ -21,23 +21,23 @@ function CraftLogger.Inventory:GetValue()
 	return value
 end
 
-function CraftLogger.Inventory:FindItemTracker(name)
-	local itemTracker = GUTIL:Find(self.itemTrackers, function(itemTracker) return itemTracker.name == name end)
+function CraftLogger.Inventory:FindItemTracker(itemID)
+	local itemTracker = GUTIL:Find(self.itemTrackers, function(itemTracker) return itemTracker.itemID == itemID end)
 	return itemTracker
 end
 
 --Value Neutral
-function CraftLogger.Inventory:Buy(name, quantity, price)
+function CraftLogger.Inventory:Buy(itemID, quantity, price)
 	local startValue = self:GetValue()
 
 	--Can make this get player money, above as well if so
 	self.wealth = self.wealth - quantity * price
 
-	local itemTracker = self:FindItemTracker(name)
+	local itemTracker = self:FindItemTracker(itemID)
 	if itemTracker then
 		itemTracker:Add(quantity, price)
 	else
-		itemTracker = CraftLogger.ItemTracker(name, quantity, price)
+		itemTracker = CraftLogger.ItemTracker(itemID, quantity, price)
 		table.insert(self.itemTrackers, itemTracker)
 	end
 
@@ -47,11 +47,11 @@ function CraftLogger.Inventory:Buy(name, quantity, price)
 end
 
 
-function CraftLogger.Inventory:Sell(name, quantity, price)
+function CraftLogger.Inventory:Sell(itemID, quantity, price)
 	--Can make this get player money, above as well if so
 	self.wealth = self.wealth + quantity * price
 
-	local itemTracker = self:FindItemTracker(name)
+	local itemTracker = self:FindItemTracker(itemID)
 	if itemTracker then
 		itemTracker:Subtract(quantity)
 	else
@@ -63,18 +63,18 @@ function CraftLogger.Inventory:Craft(inputs, output)
 	local startValue = self:GetValue()
 
 	local lostValue = 0
-	for name, quantity in pairs(inputs) do
-		itemTracker = self:FindItemTracker(name)
+	for itemID, quantity in pairs(inputs) do
+		itemTracker = self:FindItemTracker(itemID)
 		lostValue = lostValue + itemTracker:Subtract(quantity)
 	end
 	
-	local name, quantity = output
+	local itemID, quantity = output
 	local price = lostValue / quantity
-	local itemTracker = self:FindItemTracker(name)
+	local itemTracker = self:FindItemTracker(itemID)
 	if itemTracker then
 		itemTracker:Add(quantity, price)
 	else
-		itemTracker = CraftLogger.ItemTracker(name, quantity, price)
+		itemTracker = CraftLogger.ItemTracker(itemID, quantity, price)
 		table.insert(self.itemTrackers, itemTracker)
 	end
 	

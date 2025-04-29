@@ -10,7 +10,7 @@
 ## X-WoWI-ID:
 ## AddonCompartmentFunc: CraftLogger_OnAddonCompartmentClick
 ## IconTexture: Interface\Icons\inv_misc_note_01
-## SavedVariables: CraftLoggerDB, CraftLoggerDBSettings, VersionReshapes
+## SavedVariables: CraftLoggerDB, CraftLoggerDBSettings, VersionReshapes, CraftLoggerADB
 ## Dependencies: Blizzard_Professions
 ## OptionalDeps: Auctionator, TradeSkillMaster, RECrystallize, OribosExchange
 
@@ -33,4 +33,8 @@ Modules/CreateAllWithReagentsButton.lua
 
 Classes/ItemTracker.lua
 Classes/Inventory.lua
+Classes/SaleHints.lua
+Classes/AuctionHouse.lua
+Classes/Auction.lua
 Modules/ValueTracker.lua
+Modules/EventTriggers.lua

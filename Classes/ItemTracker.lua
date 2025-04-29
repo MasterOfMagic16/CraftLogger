@@ -8,8 +8,8 @@ print("ItemTracker Loaded")
 
 CraftLogger.ItemTracker = CraftLogger.CraftLoggerObject:extend()
 
-function CraftLogger.ItemTracker:new(name, quantity, price)
-	self.name = name
+function CraftLogger.ItemTracker:new(itemID, quantity, price)
+	self.itemID = itemID
 	self.quantity = quantity or 0
 	self.value = self.quantity * (price or 0)
 end
